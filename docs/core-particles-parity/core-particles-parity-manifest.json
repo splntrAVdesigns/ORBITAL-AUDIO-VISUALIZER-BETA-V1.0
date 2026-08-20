@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 2,
+  "deterministicSeedContract": "orbital-core-particles-v2-expanded-field",
+  "particleCapacity": 850,
+  "referenceParticlesPerPanel": 212,
+  "shapeModes": [
+    "dot",
+    "tri",
+    "dia",
+    "all"
+  ],
+  "captures": {
+    "core-particles-shape-parity.svg": "54106b60bb2a0da01498cbd6e02daa78ff29d5d06f8e08f62f566730ecafef24",
+    "core-particles-audio-response.svg": "53c570bd9f054a9a8fe704f345c7046321f6de88ad222e1ca5100933242ae9c1"
+  },
+  "performanceContract": {
+    "simulationDrawCallsPerFrame": 1,
+    "renderDrawCallsPerFrame": 1,
+    "cpuParticleLoopsPerFrame": 0,
+    "recurringSchedulers": 0,
+    "runtimeMetric": "window.__ORBITAL_CORE_PARTICLES_GPU__",
+    "acceptance": {
+      "averageSubmitMsMaximum": 1.5,
+      "maximumSubmitMsDuringStressMaximum": 4
+    }
+  }
+}

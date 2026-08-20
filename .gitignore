@@ -1,0 +1,53 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Production builds
+dist/
+build/
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Testing and generated certification captures
+coverage/
+artifacts/
+.runtime-smoke/
+SPRINT_22NC66_AUDIO_SOAK_RESOURCE_CAPTURE.json
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Vercel local project binding
+.vercel/
+
+# TypeScript
+*.tsbuildinfo
+
+# OS
+Thumbs.db

@@ -1,0 +1,122 @@
+{
+  "name": "orbital-audio-visualizer",
+  "version": "1.0.0-beta",
+  "description": "ORBITAL — an audio-reactive visualizer engine with sacred-geometry shape morphing, beat detection, MIDI support, and browser-based recording, built with React, Canvas2D, and WebGL2.",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": "22.x",
+    "npm": "10.x"
+  },
+  "packageManager": "npm@10.9.4",
+  "license": "MIT",
+  "author": "SPLNTR",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/splntrAVdesigns/orbital-audio-visualizer-beta-v1-0.git"
+  },
+  "homepage": "https://github.com/splntrAVdesigns/orbital-audio-visualizer-beta-v1-0#readme",
+  "bugs": {
+    "url": "https://github.com/splntrAVdesigns/orbital-audio-visualizer-beta-v1-0/issues"
+  },
+  "keywords": [
+    "audio-visualizer",
+    "web-audio-api",
+    "react",
+    "canvas",
+    "webgl",
+    "music-visualization",
+    "vj",
+    "live-performance",
+    "midi",
+    "sacred-geometry"
+  ],
+  "scripts": {
+    "prebuild": "npm run verify:package-lock",
+    "build": "vite build",
+    "dev": "vite",
+    "verify:package-lock": "node scripts/verify-package-lock-registry.mjs",
+    "verify:release-manifest": "node scripts/verify-beta-release-manifest.mjs",
+    "typecheck": "tsc -p tsconfig.json",
+    "validate:runtime": "node scripts/validate-runtime-boundary.mjs",
+    "verify": "npm run verify:package-lock && npm run verify:release-manifest && npm run audit:source && npm run audit:dependencies && npm run validate:runtime && npm run typecheck && npm run typecheck:runtime && npm run test:preflight && npm run test:beta-safety && npm run test:phase4-8b && npm run test:phase4-8h1-frame-shell && npm run test:phase4-8h2-state-runtime && npm run test:phase4-8h3-feature-runtime && npm run test:refactor-phase2 && npm run test:refactor-phase3 && npm run test:phase4-8h4-side-effects && npm run test:phase4-8h5-certification && npm run test:phase4-8j && npm run verify:core-particle-fallback && npm run verify:fallback-freeze && npm run test:tap-tempo && npm run test:bpm-detector && npm run test:audio-memory && npm run test:export-memory && npm run test:recording-controls && npm run test:recording-fidelity && npm run test:async-lifecycle && npm run audit:async-ownership && npm run test:rotation-sparks && npm run test:runtime-soak && npm run smoke:mount && npm run audit:window-bridges && npm run build && npm run verify:dist",
+    "typecheck:runtime": "tsc -p src/app/tsconfig.runtime.json",
+    "audit:source": "node scripts/audit-source-graph.mjs",
+    "audit:dependencies": "node scripts/audit-dependencies.mjs",
+    "verify:fallback-freeze": "node scripts/verify-main-thread-fallback-freeze.mjs",
+    "verify:core-particle-fallback": "node scripts/verify-core-particle-fallback-freeze.mjs",
+    "smoke:mount": "node scripts/smoke-app-mount.mjs",
+    "audit:window-bridges": "node scripts/audit-window-bridges.mjs",
+    "baseline:main-thread": "node scripts/report-main-thread-baseline.mjs",
+    "verify:dist": "node scripts/verify-dist-output.mjs",
+    "baseline:browser": "node scripts/capture-browser-baseline.mjs",
+    "field:phase4-5": "node scripts/capture-browser-baseline.mjs --out=artifacts/phase4-5-field.json",
+    "verify:phase4-5-field": "node scripts/verify-phase4-5-field-report.mjs",
+    "capture:core-particles-parity": "node scripts/capture-core-particles-parity.mjs",
+    "test:tap-tempo": "node scripts/test-tap-tempo.mjs",
+    "test:bpm-detector": "node scripts/test-bpm-detector.mjs",
+    "test:rotation-sparks": "node scripts/test-rotation-sparks.mjs",
+    "test:runtime-soak": "node scripts/test-runtime-soak.mjs",
+    "test:audio-memory": "node scripts/test-audio-memory-lifecycle.mjs",
+    "test:export-memory": "node scripts/test-export-memory-containment.mjs",
+    "audit:async-ownership": "node scripts/audit-async-ownership.mjs",
+    "test:async-lifecycle": "node scripts/test-async-lifecycle.mjs",
+    "test:recording-controls": "node scripts/test-recording-controls.mjs",
+    "test:recording-fidelity": "node scripts/test-recording-fidelity.mjs",
+    "test:preflight": "node scripts/run-unit-tests.mjs",
+    "test:beta-safety": "node scripts/test-beta-safety-contracts.mjs",
+    "test:phase4-8a-renderer-kernel": "node scripts/test-phase4-8a-renderer-kernel-extraction.mjs",
+    "test:phase4-8b-host-contract": "node scripts/test-phase4-8b-host-contract.mjs",
+    "test:phase4-8b-control-parity": "node scripts/test-phase4-8b-control-parity.mjs",
+    "test:phase4-8b": "npm run test:phase4-8a-renderer-kernel && npm run test:phase4-8b-host-contract && npm run test:phase4-8b-control-parity",
+    "test:phase4-8h1-frame-shell": "node scripts/test-phase4-8h1-production-frame-shell.mjs",
+    "test:phase4-8h2-state-runtime": "node scripts/test-phase4-8h2-state-runtime-extraction.mjs",
+    "test:phase4-8h3-feature-runtime": "node scripts/test-phase4-8h3-renderer-feature-runtime-extraction.mjs",
+    "test:refactor-phase2": "node scripts/test-refactor-phase2-session-services.mjs",
+    "test:refactor-phase3": "node scripts/test-refactor-phase3-production-frame-controller.mjs",
+    "test:phase4-8h4-side-effects": "node scripts/test-phase4-8h4-side-effect-separation.mjs",
+    "test:phase4-8h5-certification": "node scripts/test-phase4-8h5-performance-certification.mjs",
+    "test:phase4-8i-cadence": "node scripts/test-phase4-8i-cadence-recovery.mjs",
+    "test:phase4-8j": "npm run test:phase4-8j-base && npm run test:phase4-8j1 && npm run test:phase4-8j2 && npm run test:phase4-8j3",
+    "test:phase4-8j-base": "node scripts/test-phase4-8j-control-panel-isolation.mjs",
+    "test:phase4-8j1": "node scripts/test-phase4-8j1-native-control-preview-isolation.mjs",
+    "test:phase4-8j2": "node scripts/test-phase4-8j2-surface-interaction-isolation.mjs",
+    "test:phase4-8j3": "node scripts/_test-phase4-8j3-interaction-hard-boundary.mjs"
+  },
+  "dependencies": {
+    "@radix-ui/react-dialog": "1.1.6",
+    "clsx": "2.1.1",
+    "lucide-react": "0.487.0",
+    "motion": "12.23.24",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "tailwind-merge": "3.2.0",
+    "tw-animate-css": "1.3.8"
+  },
+  "devDependencies": {
+    "@babel/parser": "^7.29.7",
+    "@babel/traverse": "^7.29.7",
+    "@tailwindcss/vite": "4.1.12",
+    "@types/node": "^26.1.1",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "@vitejs/plugin-react": "4.7.0",
+    "esbuild": "0.25.12",
+    "happy-dom": "^20.10.6",
+    "tailwindcss": "4.1.12",
+    "typescript": "5.9.3",
+    "vite": "6.4.3"
+  },
+  "peerDependencies": {
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    }
+  }
+}

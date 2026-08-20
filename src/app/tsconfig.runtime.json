@@ -1,0 +1,61 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "react-jsx",
+    "noEmit": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "types": [
+      "vite/client",
+      "node"
+    ]
+  },
+  "files": [
+    "runtime/visualizer/runtime-typecheck-entry.ts",
+    "runtime/uiInteractionRuntime.ts",
+    "runtime/audio/AudioVisualStressDiagnostics.ts",
+    "runtime/visualizer/renderers/PostEffectsRendererSystem.ts",
+    "config/assets.ts",
+    "config/parameterConversions.ts",
+    "runtime/mainThread/WindowBridgeManifest.ts",
+    "runtime/bpm/BpmClockRuntime.ts",
+    "runtime/visualizer/pipeline/MainThreadUIRefreshBus.ts",
+    "utils/gifExport.ts",
+    "engine/RecordingEngine.ts",
+    "runtime/mainThread/MainThreadAsyncDiagnostics.ts",
+    "controllers/panelController.ts",
+    "runtime/CanvasViewportController.ts",
+    "engine/recording/RecordingRuntimeController.ts",
+    "src/app/hooks/useKeyboardShortcuts.ts",
+    "components/settings/RecordingSection.tsx",
+    "engine/recording/installRecordingRuntimeController.ts",
+    "engine/recording/RecordingProfiles.ts",
+    "engine/recording/RecordingFramePublisher.ts",
+    "renderers/centerGraphicRenderer.ts",
+    "src/engines/webgl/WebGLEngine.ts",
+    "src/render/coreParticles/CoreParticleTypes.ts",
+    "src/render/coreParticles/CoreParticleSeedData.ts",
+    "src/render/coreParticles/CoreParticleShaders.ts",
+    "src/render/coreParticles/CoreParticlesGpuRenderer.ts",
+    "src/shaders/presets/CosmicOrb.ts",
+    "src/shaders/presets/ChromaticWaves.ts",
+    "runtime/visualizer/RuntimeRenderAuthority.ts",
+    "runtime/visualizer/FrameSchedulerContract.ts",
+    "runtime/visualizer/session/createRuntimeFrameAuthority.ts",
+    "runtime/visualizer/session/createRuntimeAuthoritySetup.ts",
+    "utils/motionBlur.ts",
+    "runtime/visualizer/renderers/CanvasSpikeRingRenderer.ts"
+  ],
+  "include": [
+    "engine/recording/installRecordingKeyboardShortcut.ts"
+  ]
+}
