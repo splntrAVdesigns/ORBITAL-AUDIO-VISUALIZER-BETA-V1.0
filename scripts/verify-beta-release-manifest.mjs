@@ -8,6 +8,12 @@ const manifest = JSON.parse(fs.readFileSync(path.join(root, 'BETA_RELEASE_VERIFI
 const failures = [];
 const sha256 = value => crypto.createHash('sha256').update(value).digest('hex');
 const canonicalText = value => `${value.toString('utf8').replace(/\r\n?/g, '\n').trimEnd()}\n`;
+const canonicalJsonText = value => `${JSON.stringify(JSON.parse(value.toString('utf8')), null, 2)}\n`;
+// Vercel normalizes vercel.json to compact JSON inside its build workspace before
+// the configured build command runs. Hash the semantic config in the same stable
+// two-space representation used by the certified source so formatting-only changes
+// cannot invalidate the release gate.
+const jsonCanonicalFiles = new Set(['vercel.json']);
 // Vendored third-party assets remain byte-exact; first-party text is hashed
 // after newline normalization so Git checkout policy cannot invalidate it.
 const byteExactVendorFiles = new Set([
@@ -30,7 +36,12 @@ for (const [relativePath, expected] of Object.entries(manifest.files)) {
     continue;
   }
   const bytes = fs.readFileSync(filePath);
-  const actual = sha256(byteExactVendorFiles.has(relativePath) ? bytes : canonicalText(bytes));
+  const hashInput = byteExactVendorFiles.has(relativePath)
+    ? bytes
+    : jsonCanonicalFiles.has(relativePath)
+      ? canonicalJsonText(bytes)
+      : canonicalText(bytes);
+  const actual = sha256(hashInput);
   if (actual !== expected) failures.push(`${relativePath}: expected ${expected}; found ${actual}`);
 }
 
