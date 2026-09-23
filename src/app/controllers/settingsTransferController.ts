@@ -1,5 +1,6 @@
 import { DEBUG_FLAGS } from '../src/app/config/debugFlags';
 import { markUserRequestedReload } from '../runtime/crashTelemetry';
+import { safeLocalStorage } from '../utils/browserCompat';
 import {
   validateCustomPresetResource,
   validateSettingsImportResource,
@@ -39,7 +40,7 @@ export function captureOrbitalScreenshot(canvas: HTMLCanvasElement | null) {
 export function exportOrbitalSettings() {
   let customPresets: unknown[] = [];
   try {
-    const saved = localStorage.getItem('orbitalCustomPresets');
+    const saved = safeLocalStorage.getItem('orbitalCustomPresets');
     if (saved) customPresets = JSON.parse(saved);
   } catch (error) {
     console.warn('Could not load custom presets for export:', error);
@@ -115,7 +116,7 @@ export function importOrbitalSettings(file: File) {
           return;
         }
         const customPresets = record.customPresets as unknown[];
-        localStorage.setItem('orbitalCustomPresets', JSON.stringify(customPresets));
+        safeLocalStorage.setItem('orbitalCustomPresets', JSON.stringify(customPresets));
         if (DEBUG_FLAGS.GENERAL) console.log(`✅ Imported ${customPresets.length} custom preset(s)`);
         if (customPresets.length > 0) {
           alert(`✅ Settings and ${customPresets.length} custom preset(s) imported successfully!\n\nThe page will reload to apply custom presets.`);

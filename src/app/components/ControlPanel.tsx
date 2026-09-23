@@ -18,6 +18,7 @@ import { probeAudioDuration } from '../runtime/audio/AudioObjectUrlRegistry';
 import { AudioMetadataStrip } from './AudioMetadataStrip';
 import { setControlPanelAudioTab, useControlPanelAudioTab } from '../runtime/controlPanelRuntimeStore';
 import { validateAudioTrackResource } from '../config/resourceLimits';
+import { safeLocalStorage } from '../utils/browserCompat';
 
 const CONTROL_PANEL_DEBUG = Boolean((import.meta as any)?.env?.DEV && typeof window !== 'undefined' && (window as any).__ORBITAL_DEBUG_CONTROLS__);
 const devLog = (...args: any[]) => { if (CONTROL_PANEL_DEBUG) console.log(...args); };
@@ -759,7 +760,7 @@ export const ControlPanel = memo(function ControlPanel(props: ControlPanelProps)
                       onChange={(e) => {
                         setAutoAdvance(e.target.checked);
                         (window as any).autoAdvance = e.target.checked; // Update window object
-                        localStorage.setItem('orbital-auto-advance', String(e.target.checked));
+                        safeLocalStorage.setItem('orbital-auto-advance', String(e.target.checked));
                       }}
                       style={{ cursor: 'pointer' }}
                     />
@@ -780,7 +781,7 @@ export const ControlPanel = memo(function ControlPanel(props: ControlPanelProps)
                       onChange={(e) => {
                         setShuffleEnabled(e.target.checked);
                         (window as any).shuffleEnabled = e.target.checked; // Update window object
-                        localStorage.setItem('orbital-shuffle-enabled', String(e.target.checked));
+                        safeLocalStorage.setItem('orbital-shuffle-enabled', String(e.target.checked));
                       }}
                       style={{ cursor: 'pointer' }}
                     />

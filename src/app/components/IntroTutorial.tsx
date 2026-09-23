@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, X, Play, Sliders, Radio, Zap, Sparkles } from 'lucide-react';
 
 import { orbitalLogo, recoverBuiltInAssetImage } from '../config/assets';
+import { safeLocalStorage } from '../utils/browserCompat';
 
 interface IntroTutorialProps {
   onClose: () => void;
@@ -27,7 +28,7 @@ export function IntroTutorial({ onClose }: IntroTutorialProps) {
   }, [currentSlide]);
 
   const handleSkip = () => {
-    localStorage.setItem('orbital-intro-completed', 'true');
+    safeLocalStorage.setItem('orbital-intro-completed', 'true');
     onClose();
   };
 

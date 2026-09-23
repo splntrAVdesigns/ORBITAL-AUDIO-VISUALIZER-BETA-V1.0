@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { safeLocalStorage } from '../../../utils/browserCompat';
 
 export type AppViewState = 'landing' | 'loading' | 'main';
 
@@ -13,7 +14,7 @@ export function useAppShellState() {
   const [showIntroTutorial, setShowIntroTutorial] = useState(false);
 
   const [showKeyboardHelper, setShowKeyboardHelper] = useState(() => {
-    const saved = localStorage.getItem('orbital-keyboard-helper-visible');
+    const saved = safeLocalStorage.getItem('orbital-keyboard-helper-visible');
     return saved === 'true';
   });
 

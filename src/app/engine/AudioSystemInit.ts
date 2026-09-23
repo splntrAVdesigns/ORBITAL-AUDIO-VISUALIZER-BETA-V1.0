@@ -142,8 +142,12 @@ export function initAudioSystem(opts: AudioSystemInitOptions): AudioSystemResult
   try {
     analyser = AC.createAnalyser();
     analyser.fftSize              = 2 ** 7; // 128 — controlled by FFT slider via bind()
-    // Sprint 21: low analyser smoothing keeps spikes visually on-beat; cinematic smoothing now lives in VisualReactivityEngine.
-    analyser.smoothingTimeConstant = 0.04;
+    // Sprint "Integrity Lock": Sprint 21 dropped this to 0.04 on the theory that
+    // cinematic smoothing had moved into VisualReactivityEngine, but 0.48 was the
+    // empirically confirmed baseline (see project learnings) and the low value was
+    // never re-validated against it. Restored per explicit decision — do not
+    // lower this again without side-by-side comparison against 0.48.
+    analyser.smoothingTimeConstant = 0.48;
     analyser.minDecibels          = -90;
     analyser.maxDecibels          = -25;
 

@@ -120,7 +120,15 @@ export function createKeyboardShortcutHandler({
       e.preventDefault();
       setShowKeyboardHelper(prev => {
         const newValue = !prev;
-        localStorage.setItem('orbital-keyboard-helper-visible', String(newValue));
+        // Inline try/catch (not the safeLocalStorage wrapper): this file is
+        // transpiled standalone by scripts/test-recording-controls.mjs, which
+        // copies it in isolation with no module resolution, so it must not
+        // depend on any external import.
+        try {
+          localStorage.setItem('orbital-keyboard-helper-visible', String(newValue));
+        } catch (err) {
+          console.warn('localStorage.setItem failed for key "orbital-keyboard-helper-visible":', err);
+        }
         return newValue;
       });
       console.log('⌨️ ? pressed - Keyboard helper toggled');

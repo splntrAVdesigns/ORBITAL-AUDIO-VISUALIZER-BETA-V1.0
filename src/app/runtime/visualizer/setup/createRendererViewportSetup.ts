@@ -98,7 +98,15 @@ export function createRendererViewportSetup(options: RendererViewportSetupOption
   const legacyWebGL = renderWebGLOnMainThread
     ? createLegacyWebGLSetup({
         glCanvas,
-        shouldInitLegacyGL: !CORE_PARTICLES_SANDBOX && !useWebGLCoreParticlesRef.current,
+        // Sprint "Integrity Lock": CORE_PARTICLES_SANDBOX previously excluded this
+        // context unconditionally, so it was never created and the WebGL spike
+        // renderer (thick-bar overlay, Spike Bloom, GPU Iridize) was permanently
+        // dead in production. The frame controller already enforces mutual
+        // exclusivity at render time via `useEngineOwnedGL` / `legacyWebGLSpikeAllowed`
+        // (createVisualizerProductionFrameController.ts), so gating context
+        // creation on Core Particles' *actual* per-session GL usage — rather than
+        // the sandbox flag — is sufficient and restores the GPU spike path.
+        shouldInitLegacyGL: !useWebGLCoreParticlesRef.current,
         debugGeneral: DEBUG_FLAGS.GENERAL,
         debugWebGL: DEBUG_WEBGL,
         setUseWebGL,

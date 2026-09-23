@@ -190,8 +190,9 @@ export class MidiController {
     return {enabled:this.enabled,capability:this.capability,inputs,selectedInputId:this.selectedInputId,channel:this.channel,learningMacro:this.learningMacro,assignments:{...this.assignments},lastCC:this.lastCC,lastValue:this.lastValue,learnExpiresAt:this.learnExpiresAt,error:this.error,guidance:this.guidance};
   }
   private emit(){ window.dispatchEvent(new CustomEvent('orbital:midi-status',{detail:this.snapshot()})); }
-  private save(){ localStorage.setItem(STORAGE,JSON.stringify({selectedInputId:this.selectedInputId,channel:this.channel,assignments:this.assignments})); }
-  private load(){ try{const s=JSON.parse(localStorage.getItem(STORAGE)||'{}'); if(s.selectedInputId)this.selectedInputId=s.selectedInputId; if(Number.isFinite(s.channel))this.channel=s.channel; if(s.assignments)this.assignments={...DEFAULT_ASSIGNMENTS,...s.assignments};}catch{} }
+  private save(){ safeLocalStorage.setItem(STORAGE,JSON.stringify({selectedInputId:this.selectedInputId,channel:this.channel,assignments:this.assignments})); }
+  private load(){ try{const s=JSON.parse(safeLocalStorage.getItem(STORAGE)||'{}'); if(s.selectedInputId)this.selectedInputId=s.selectedInputId; if(Number.isFinite(s.channel))this.channel=s.channel; if(s.assignments)this.assignments={...DEFAULT_ASSIGNMENTS,...s.assignments};}catch{} }
 }
 import { cancelTrackedTimeout, scheduleTrackedTimeout } from '../runtime/mainThread/MainThreadAsyncDiagnostics';
+import { safeLocalStorage } from '../utils/browserCompat';
 import { applyRuntimeParameterTransaction } from '../runtime/parameters/RuntimeParameterTransactions';
