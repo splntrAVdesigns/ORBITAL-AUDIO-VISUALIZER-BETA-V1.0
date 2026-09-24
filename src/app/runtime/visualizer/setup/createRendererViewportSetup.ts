@@ -98,15 +98,23 @@ export function createRendererViewportSetup(options: RendererViewportSetupOption
   const legacyWebGL = renderWebGLOnMainThread
     ? createLegacyWebGLSetup({
         glCanvas,
-        // Sprint "Integrity Lock": CORE_PARTICLES_SANDBOX previously excluded this
-        // context unconditionally, so it was never created and the WebGL spike
-        // renderer (thick-bar overlay, Spike Bloom, GPU Iridize) was permanently
-        // dead in production. The frame controller already enforces mutual
-        // exclusivity at render time via `useEngineOwnedGL` / `legacyWebGLSpikeAllowed`
-        // (createVisualizerProductionFrameController.ts), so gating context
-        // creation on Core Particles' *actual* per-session GL usage — rather than
-        // the sandbox flag — is sufficient and restores the GPU spike path.
-        shouldInitLegacyGL: !useWebGLCoreParticlesRef.current,
+        // Sprint C: `useWebGLCoreParticlesRef` was read here as a mount-time
+        // gate, but it's initialized to `true` in App.tsx and never
+        // reassigned anywhere in the codebase — so this check was always a
+        // no-op and the legacy context was effectively still permanently
+        // gated off by history, not by design. Investigated the real
+        // resource-sharing question instead of just deleting a dead check:
+        // Core Particles' engine (`ensureCoreParticlesGpuRenderer` below) is
+        // constructed lazily, on first use, and idempotently reuses whatever
+        // WebGL2 context already exists on this canvas rather than requiring
+        // a fresh one — with its own try/catch + Canvas2D fallback if that
+        // ever fails. And at render time, `legacyWebGLSpikeAllowed` (in the
+        // frame controller) only ever lets this renderer actually draw when
+        // `params.vizMode === 0` and `!useEngineOwnedGL` — so even when
+        // Core Particles' mode is what's selected, the legacy context
+        // existing is harmless; it simply never draws. Safe to always create
+        // it here, restoring GPU Spike Bloom and shader-owned Iridize.
+        shouldInitLegacyGL: true,
         debugGeneral: DEBUG_FLAGS.GENERAL,
         debugWebGL: DEBUG_WEBGL,
         setUseWebGL,
