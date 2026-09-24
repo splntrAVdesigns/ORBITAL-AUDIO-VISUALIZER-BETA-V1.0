@@ -51,6 +51,23 @@ export function renderCanvasSpikeRing(frame: CanvasSpikeRingFrame): void {
   const spectrumMode = Boolean(params.spectrum);
   const canvasIridize = Number(params.iridize) > 0.01;
   const iridizeBandSize = canvasIridize ? Math.max(1, Math.ceil(N / 24)) : N;
+  // Iridize enhancement: 3x the color-shift intensity per direct user
+  // request ("even at 100% too weak, needs 3x, noticeable at 10-20%").
+  // Every downstream use is already clamped (Math.min(100,...) / Math.min(...,...)),
+  // so scaling the input intensity is safe — it just saturates to the clamp
+  // ceiling sooner, which is exactly the "noticeable much earlier" ask.
+  const IRIDIZE_INTENSITY_MULT = 3;
+  // Band-to-band interpolation state: carries the previous band's color
+  // forward so each spike smoothly blends from it toward the new band's
+  // target across the span of the new band, instead of jumping the instant
+  // a new band starts. Seeded from the base color so the very first band
+  // fades in rather than jumping from nothing.
+  let prevBandHue = effectiveHue;
+  let prevBandSat = sat;
+  let prevBandLum = canvasFallbackGammaLum;
+  let curBandHue = prevBandHue;
+  let curBandSat = prevBandSat;
+  let curBandLum = prevBandLum;
 
   const nyquist = sampleRate / 2;
   const minAudibleHz = 90;
@@ -96,14 +113,29 @@ export function renderCanvasSpikeRing(frame: CanvasSpikeRingFrame): void {
     let localLum = canvasFallbackGammaLum;
     if (canvasIridize) {
       if (i % iridizeBandSize === 0) {
-        const iriIntensity = params.iridize * Math.max(0, normalizedAmp - 0.15) / 0.85;
+        // This band's own new target color — the expensive math (trig,
+        // amplitude read) still only runs once per band, exactly as before.
+        prevBandHue = curBandHue;
+        prevBandSat = curBandSat;
+        prevBandLum = curBandLum;
+        const iriIntensity = (params.iridize * IRIDIZE_INTENSITY_MULT) * Math.max(0, normalizedAmp - 0.15) / 0.85;
         const shimmer = Math.sin(spikeTimeAcc * 4.1 + (i / iridizeBandSize) * 0.72) * 0.5 + 0.5;
         const chromaPulse = Math.max(shimmer, beatPulse * 0.75);
-        localHue = (localHue + iriIntensity * (28 + chromaPulse * 38) + beatPulse * 14 * params.iridize + 360) % 360;
-        localSat = Math.min(100, localSat + iriIntensity * 66 + beatPulse * 18 * params.iridize);
-        localLum = Math.min(76, localLum + iriIntensity * 11 * chromaPulse + beatPulse * 5 * params.iridize);
-        ctx.strokeStyle = `hsla(${localHue},${localSat}%,${localLum}%,${finalAlpha})`;
+        curBandHue = (localHue + iriIntensity * (28 + chromaPulse * 38) + beatPulse * 14 * params.iridize * IRIDIZE_INTENSITY_MULT + 360) % 360;
+        curBandSat = Math.min(100, localSat + iriIntensity * 66 + beatPulse * 18 * params.iridize * IRIDIZE_INTENSITY_MULT);
+        curBandLum = Math.min(85, localLum + iriIntensity * 11 * chromaPulse + beatPulse * 5 * params.iridize * IRIDIZE_INTENSITY_MULT);
       }
+      // Soft fluid blend, every spike: interpolate from the previous band's
+      // color toward this band's target across the span of the band, so
+      // there's never a hard seam — just cheap arithmetic per spike (no new
+      // trig), the same shape of per-spike cost the spectrum-mode branch
+      // below already has.
+      const t = (i % iridizeBandSize) / iridizeBandSize;
+      let hueDelta = ((curBandHue - prevBandHue + 540) % 360) - 180;
+      localHue = (prevBandHue + hueDelta * t + 360) % 360;
+      localSat = prevBandSat + (curBandSat - prevBandSat) * t;
+      localLum = prevBandLum + (curBandLum - prevBandLum) * t;
+      ctx.strokeStyle = `hsla(${localHue},${localSat}%,${localLum}%,${finalAlpha})`;
     } else if (spectrumMode || i === 0 || (params.beatDetect && (params.beatPulseType === 'color' || params.beatPulseType === 'all'))) {
       ctx.strokeStyle = `hsla(${localHue},${localSat}%,${localLum}%,${finalAlpha})`;
     }
