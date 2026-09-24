@@ -136,34 +136,5 @@ export function renderCanvasSpikeRing(frame: CanvasSpikeRingFrame): void {
       ctx.lineTo(cosA * (baseR - amp * params.mirror), sinA * (baseR - amp * params.mirror));
       ctx.stroke();
     }
-
-    // Iridize redesign: a radial base→tip accent along the spike's own
-    // existing line — never new geometry past the tip, never a separate
-    // element. Color reuses localHue/localSat/localLum, which are only
-    // recomputed once per iridizeBandSize band above (not per spike), so
-    // this adds one cheap flat-color stroke per spike and nothing else.
-    // Length and alpha both track spikeProgress — this spike's own current
-    // pulse strength — so the accent visibly grows from partway up the
-    // spike toward the tip as it pulses outward, and shrinks back as it
-    // settles, exactly in time with the spike itself. iridizeRamp uses a
-    // >1 exponent so the effect stays subtle through most of the slider's
-    // range and only becomes dramatic near 100%.
-    if (canvasIridize) {
-      const spikeProgress = Math.max(0, Math.min(1, (spikePulseMod - 0.35) / 0.65));
-      if (spikeProgress > 0.02) {
-        const iridizeRamp = Math.pow(Number(params.iridize), 2.5);
-        const accentStartFrac = 1 - (0.22 + 0.6 * spikeProgress);
-        const accentStartR = baseR + spikeLen * accentStartFrac;
-        const accentHue = (localHue + 55) % 360;
-        const accentSat = Math.min(100, localSat + 25);
-        const accentLum = Math.min(80, localLum + 18);
-        const accentAlpha = Math.min(1, finalAlpha * iridizeRamp * (0.5 + spikeProgress * 0.8));
-        ctx.strokeStyle = `hsla(${accentHue.toFixed(1)},${accentSat.toFixed(1)}%,${accentLum.toFixed(1)}%,${accentAlpha.toFixed(3)})`;
-        ctx.beginPath();
-        ctx.moveTo(cosA * accentStartR, sinA * accentStartR);
-        ctx.lineTo(cosA * (baseR + spikeLen), sinA * (baseR + spikeLen));
-        ctx.stroke();
-      }
-    }
   }
 }
