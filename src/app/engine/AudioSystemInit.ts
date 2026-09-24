@@ -143,12 +143,14 @@ export function initAudioSystem(opts: AudioSystemInitOptions): AudioSystemResult
   try {
     analyser = AC.createAnalyser();
     analyser.fftSize              = 2 ** 7; // 128 — controlled by FFT slider via bind()
-    // Sprint "Integrity Lock": Sprint 21 dropped this to 0.04 on the theory that
-    // cinematic smoothing had moved into VisualReactivityEngine, but 0.48 was the
-    // empirically confirmed baseline (see project learnings) and the low value was
-    // never re-validated against it. Restored per explicit decision — do not
-    // lower this again without side-by-side comparison against 0.48.
-    analyser.smoothingTimeConstant = 0.48;
+    // REVERTED (2026-09-24): "Sprint Integrity Lock" changed this to 0.48
+    // based on a stored project note claiming that value was empirically
+    // confirmed optimal. That note predates this reference build, which
+    // ships 0.04 as the approved, "spike ring at its best" value — the note
+    // was stale, not the code. Restored to match the approved reference.
+    // Do not change again without side-by-side comparison against the
+    // actual reference build, not against a written note.
+    analyser.smoothingTimeConstant = 0.04;
     analyser.minDecibels          = -90;
     analyser.maxDecibels          = -25;
 

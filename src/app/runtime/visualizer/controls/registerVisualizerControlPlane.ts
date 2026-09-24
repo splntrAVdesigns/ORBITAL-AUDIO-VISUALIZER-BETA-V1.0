@@ -222,13 +222,18 @@ export function registerVisualizerControlPlane(options: VisualizerControlPlaneOp
 
         // CRITICAL FIX: Preserve existing amplitude data when resizing
         // This prevents visual collapse when FFT slider is dragged
-        // Sprint B: this must match `N = filteredFreqArr.length` (frequencyBinCount)
-        // in the frame loop's spike buffers, not the time-domain fftSize (2x too
-        // large). Previously every FFT slider change ran a full linear-interp
-        // resample here at the wrong size, then the frame controller's own
-        // `ampBuf.length !== N` check fired on the very next frame and redid the
-        // resize with a cruder nearest-neighbor copy, discarding this one entirely.
-        const newLength = analyser.frequencyBinCount;
+        // REVERTED (2026-09-24): "Sprint B" changed this to
+        // analyser.frequencyBinCount, reasoning that it should match N in
+        // the frame loop's spike buffers (fftSize / 2) rather than fftSize
+        // itself, to eliminate a redundant double-resample on every FFT
+        // slider change. That reasoning holds on its own, but the approved
+        // reference build uses fftSize (via timeArr.length) here and was
+        // confirmed "at its best" with it — so restoring exact parity with
+        // the reference takes priority over the optimization for now. This
+        // is a real, isolated perf improvement worth revisiting later, on
+        // its own, once spike-ring visual parity is fully confirmed again —
+        // not bundled with anything else.
+        const newLength = audioBuffers.timeArr.length;
         spikeFeature.ampBuf = new Float32Array(newLength);
         spikeFeature.ampEcho1 = new Float32Array(newLength);
         spikeFeature.ampEcho2 = new Float32Array(newLength);

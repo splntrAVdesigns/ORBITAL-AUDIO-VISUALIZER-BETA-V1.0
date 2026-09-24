@@ -98,23 +98,17 @@ export function createRendererViewportSetup(options: RendererViewportSetupOption
   const legacyWebGL = renderWebGLOnMainThread
     ? createLegacyWebGLSetup({
         glCanvas,
-        // Sprint C: `useWebGLCoreParticlesRef` was read here as a mount-time
-        // gate, but it's initialized to `true` in App.tsx and never
-        // reassigned anywhere in the codebase — so this check was always a
-        // no-op and the legacy context was effectively still permanently
-        // gated off by history, not by design. Investigated the real
-        // resource-sharing question instead of just deleting a dead check:
-        // Core Particles' engine (`ensureCoreParticlesGpuRenderer` below) is
-        // constructed lazily, on first use, and idempotently reuses whatever
-        // WebGL2 context already exists on this canvas rather than requiring
-        // a fresh one — with its own try/catch + Canvas2D fallback if that
-        // ever fails. And at render time, `legacyWebGLSpikeAllowed` (in the
-        // frame controller) only ever lets this renderer actually draw when
-        // `params.vizMode === 0` and `!useEngineOwnedGL` — so even when
-        // Core Particles' mode is what's selected, the legacy context
-        // existing is harmless; it simply never draws. Safe to always create
-        // it here, restoring GPU Spike Bloom and shader-owned Iridize.
-        shouldInitLegacyGL: true,
+        // REVERTED (2026-09-24): restored to the exact original gate from the
+        // approved reference build. Two different attempts to enable this
+        // path (Sprint "Integrity Lock", then a deeper resource-sharing
+        // investigation) both looked correct in isolation but broke in
+        // production the moment glCanvas actually rendered for the first
+        // time — a second, mispositioned copy of the spike ring appeared,
+        // because that canvas element's DOM position had never been
+        // exercised with visible content before and nobody could have
+        // noticed it was wrong. Left off until that's found and fixed with
+        // the canvas actually visible to test against.
+        shouldInitLegacyGL: !CORE_PARTICLES_SANDBOX && !useWebGLCoreParticlesRef.current,
         debugGeneral: DEBUG_FLAGS.GENERAL,
         debugWebGL: DEBUG_WEBGL,
         setUseWebGL,

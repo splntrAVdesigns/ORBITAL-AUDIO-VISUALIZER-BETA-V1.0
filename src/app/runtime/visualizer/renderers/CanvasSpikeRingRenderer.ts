@@ -29,15 +29,6 @@ export interface CanvasSpikeRingFrame {
  * Worker-neutral extraction of Orbital's certified Canvas2D spike submission.
  * The signal chain stays upstream; this function owns only frequency mapping,
  * color/iridize bands, zoom-ring geometry and mirrored line submission.
- *
- * Sprint C hotfix: the Path2D-batched version (Sprint "Integrity Lock") cut
- * paint calls but changed the visual result — Canvas2D composites everything
- * inside one Path2D as a single flat shape, while separate per-spike
- * stroke() calls at alpha<1 blend/layer wherever adjacent spikes overlap.
- * That per-spike blending is what gave the ring its soft, smooth-fluid look,
- * and losing it read as "blocky." Reverted to one stroke() call per spike —
- * geometry and color math are unchanged from the batched version, only the
- * paint-call structure reverts to match the certified pre-Sprint-A look.
  */
 export function renderCanvasSpikeRing(frame: CanvasSpikeRingFrame): void {
   const {
@@ -59,16 +50,7 @@ export function renderCanvasSpikeRing(frame: CanvasSpikeRingFrame): void {
   const finalAlpha = 0.9 * alphaScale * fftAlphaCompensation * zoomWaveTransparency;
   const spectrumMode = Boolean(params.spectrum);
   const canvasIridize = Number(params.iridize) > 0.01;
-  const iridizeAmount = canvasIridize ? Number(params.iridize) : 0;
   const iridizeBandSize = canvasIridize ? Math.max(1, Math.ceil(N / 24)) : N;
-  // Sprint C: the flare's own amplitude gate, well above spikeSignalChain.ts's
-  // displayGate (0.07). buf[] here is spikeFeature.spikeDisplayBuf — the
-  // project's already-smoothed, already-gated display signal, so 0.12 was
-  // barely above the existing noise floor and let a sustained, non-musical
-  // reading (mic hardware noise floor, idle hum, etc.) in one narrow bin
-  // range trigger the flare continuously even in silence. Raised with real
-  // margin so only genuine musical peaks cross it.
-  const flareAmpGate = 0.35;
 
   const nyquist = sampleRate / 2;
   const minAudibleHz = 90;
@@ -112,21 +94,20 @@ export function renderCanvasSpikeRing(frame: CanvasSpikeRingFrame): void {
 
     let localSat = sat;
     let localLum = canvasFallbackGammaLum;
-    let shimmer = 0;
-
     if (canvasIridize) {
       if (i % iridizeBandSize === 0) {
-        const iriIntensity = iridizeAmount * Math.max(0, normalizedAmp - 0.15) / 0.85;
-        shimmer = Math.sin(spikeTimeAcc * 4.1 + (i / iridizeBandSize) * 0.72) * 0.5 + 0.5;
+        const iriIntensity = params.iridize * Math.max(0, normalizedAmp - 0.15) / 0.85;
+        const shimmer = Math.sin(spikeTimeAcc * 4.1 + (i / iridizeBandSize) * 0.72) * 0.5 + 0.5;
         const chromaPulse = Math.max(shimmer, beatPulse * 0.75);
-        localHue = (localHue + iriIntensity * (28 + chromaPulse * 38) + beatPulse * 14 * iridizeAmount + 360) % 360;
-        localSat = Math.min(100, localSat + iriIntensity * 66 + beatPulse * 18 * iridizeAmount);
-        localLum = Math.min(76, localLum + iriIntensity * 11 * chromaPulse + beatPulse * 5 * iridizeAmount);
+        localHue = (localHue + iriIntensity * (28 + chromaPulse * 38) + beatPulse * 14 * params.iridize + 360) % 360;
+        localSat = Math.min(100, localSat + iriIntensity * 66 + beatPulse * 18 * params.iridize);
+        localLum = Math.min(76, localLum + iriIntensity * 11 * chromaPulse + beatPulse * 5 * params.iridize);
         ctx.strokeStyle = `hsla(${localHue},${localSat}%,${localLum}%,${finalAlpha})`;
       }
     } else if (spectrumMode || i === 0 || (params.beatDetect && (params.beatPulseType === 'color' || params.beatPulseType === 'all'))) {
       ctx.strokeStyle = `hsla(${localHue},${localSat}%,${localLum}%,${finalAlpha})`;
     }
+    ctx.lineWidth = Number(params.lineWidth) || 1;
 
     let binZoomMod = 1.0;
     if (params.zoomOsc > 0.001) {
@@ -143,45 +124,17 @@ export function renderCanvasSpikeRing(frame: CanvasSpikeRingFrame): void {
     const sinA = spikeSinTable[i] ?? Math.sin(a);
     const x0 = cosA * baseR;
     const y0 = sinA * baseR;
-    const spikePulseMod = 0.35 + Math.min(1, amp) * 0.65;
-    const spikeLen = amp * (Number(params.spikeTightness) || 1) * spikePulseMod;
-    const tipX = cosA * (baseR + spikeLen);
-    const tipY = sinA * (baseR + spikeLen);
-
-    ctx.lineWidth = Number(params.lineWidth) || 1;
     ctx.beginPath();
     ctx.moveTo(x0, y0);
-    ctx.lineTo(tipX, tipY);
+    const spikePulseMod = 0.35 + Math.min(1, amp) * 0.65;
+    const spikeLen = amp * (Number(params.spikeTightness) || 1) * spikePulseMod;
+    ctx.lineTo(cosA * (baseR + spikeLen), sinA * (baseR + spikeLen));
     ctx.stroke();
     if (params.mirror > 0) {
       ctx.beginPath();
       ctx.moveTo(x0, y0);
       ctx.lineTo(cosA * (baseR - amp * params.mirror), sinA * (baseR - amp * params.mirror));
       ctx.stroke();
-    }
-
-    // Chroma Flare (fresh Iridize design, Sprint "Integrity Lock"): own hue
-    // lane, own additive alpha via 'lighter' compositing so it only ever
-    // adds light on top of the base spike, never dims or desaturates it.
-    // Gated well above the signal chain's own noise floor (see flareAmpGate
-    // above) so it rides genuine musical peaks, not a sustained hardware
-    // noise-floor reading in one narrow bin range.
-    if (canvasIridize && normalizedAmp > flareAmpGate) {
-      const flareEnergy = iridizeAmount * (0.35 + beatPulse * 0.65);
-      const flareHue = (localHue + 150 + shimmer * 40 + spikeTimeAcc * 30) % 360;
-      const flareSat = Math.min(100, 70 + flareEnergy * 30);
-      const flareLum = Math.min(85, 55 + flareEnergy * 30 + beatPulse * 10);
-      const flareAlpha = Math.min(1, finalAlpha * (0.55 + flareEnergy * 1.1));
-      const flareLen = spikeLen * (0.35 + flareEnergy * 0.9);
-      const priorComposite = ctx.globalCompositeOperation;
-      ctx.globalCompositeOperation = 'lighter';
-      ctx.strokeStyle = `hsla(${flareHue.toFixed(1)},${flareSat.toFixed(1)}%,${flareLum.toFixed(1)}%,${flareAlpha.toFixed(3)})`;
-      ctx.lineWidth = Math.max(1, (Number(params.lineWidth) || 1) * 0.85);
-      ctx.beginPath();
-      ctx.moveTo(tipX, tipY);
-      ctx.lineTo(cosA * (baseR + spikeLen + flareLen), sinA * (baseR + spikeLen + flareLen));
-      ctx.stroke();
-      ctx.globalCompositeOperation = priorComposite;
     }
   }
 }
