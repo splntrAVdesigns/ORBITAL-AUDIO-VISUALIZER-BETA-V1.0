@@ -25,24 +25,19 @@ export interface CanvasSpikeRingFrame {
   hueShift?: number;
 }
 
-// Sprint "Integrity Lock" — Perf Win #1: bucket spikes by resolved stroke color and
-// submit one Path2D per bucket instead of one beginPath()/stroke() pair per spike
-// (up to 2N canvas paint calls per frame at high FFT). Path2D subpaths are drawn in
-// one composite, cutting the paint-call count from O(N) to O(bucket count) with
-// pixel-identical output. Module-scoped so the Map itself isn't reallocated every
-// frame — only the (far fewer) Path2D instances touched this frame are.
-const baseBucketPaths = new Map<string, Path2D>();
-// Fresh Iridize design ("Chroma Flare", Sprint "Integrity Lock"): an additive,
-// beat-reactive streak drawn past the spike tip in its own hue lane, composited
-// with 'lighter' so it only ever ADDS light/alpha on top of the base spike —
-// never dims or desaturates it — and reads as a distinct flare rather than a
-// recolor of the existing line.
-const flareBucketPaths = new Map<string, Path2D>();
-
 /**
  * Worker-neutral extraction of Orbital's certified Canvas2D spike submission.
  * The signal chain stays upstream; this function owns only frequency mapping,
  * color/iridize bands, zoom-ring geometry and mirrored line submission.
+ *
+ * Sprint C hotfix: the Path2D-batched version (Sprint "Integrity Lock") cut
+ * paint calls but changed the visual result — Canvas2D composites everything
+ * inside one Path2D as a single flat shape, while separate per-spike
+ * stroke() calls at alpha<1 blend/layer wherever adjacent spikes overlap.
+ * That per-spike blending is what gave the ring its soft, smooth-fluid look,
+ * and losing it read as "blocky." Reverted to one stroke() call per spike —
+ * geometry and color math are unchanged from the batched version, only the
+ * paint-call structure reverts to match the certified pre-Sprint-A look.
  */
 export function renderCanvasSpikeRing(frame: CanvasSpikeRingFrame): void {
   const {
@@ -66,13 +61,14 @@ export function renderCanvasSpikeRing(frame: CanvasSpikeRingFrame): void {
   const canvasIridize = Number(params.iridize) > 0.01;
   const iridizeAmount = canvasIridize ? Number(params.iridize) : 0;
   const iridizeBandSize = canvasIridize ? Math.max(1, Math.ceil(N / 24)) : N;
-  const beatColorMode = Boolean(params.beatDetect) && (params.beatPulseType === 'all' || params.beatPulseType === 'color');
-  // Color only varies per-index in spectrum/beat-color modes; iridize varies per
-  // band; otherwise it's set once at i===0 and frozen for the whole frame — this
-  // mirrors the original per-iteration `ctx.strokeStyle =` gating exactly, just
-  // routed into bucket keys instead of immediate paint calls.
-  const perIndexColor = !canvasIridize && (spectrumMode || beatColorMode);
-  const lineWidthPx = Number(params.lineWidth) || 1;
+  // Sprint C: the flare's own amplitude gate, well above spikeSignalChain.ts's
+  // displayGate (0.07). buf[] here is spikeFeature.spikeDisplayBuf — the
+  // project's already-smoothed, already-gated display signal, so 0.12 was
+  // barely above the existing noise floor and let a sustained, non-musical
+  // reading (mic hardware noise floor, idle hum, etc.) in one narrow bin
+  // range trigger the flare continuously even in silence. Raised with real
+  // margin so only genuine musical peaks cross it.
+  const flareAmpGate = 0.35;
 
   const nyquist = sampleRate / 2;
   const minAudibleHz = 90;
@@ -80,14 +76,6 @@ export function renderCanvasSpikeRing(frame: CanvasSpikeRingFrame): void {
   const minBin = Math.max(0, Math.floor((minAudibleHz / nyquist) * buf.length));
   const maxBin = Math.max(minBin, Math.min(Math.floor((maxAudibleHz / nyquist) * buf.length), buf.length - 1));
   const audibleBins = Math.max(1, maxBin - minBin);
-
-  baseBucketPaths.clear();
-  if (canvasIridize) flareBucketPaths.clear();
-
-  let currentBaseKey = '';
-  let currentBasePath: Path2D | null = null;
-  let currentFlareKey = '';
-  let currentFlarePath: Path2D | null = null;
 
   for (let i = 0; i < N; i += 1) {
     const a = (i / N) * TAU;
@@ -126,48 +114,18 @@ export function renderCanvasSpikeRing(frame: CanvasSpikeRingFrame): void {
     let localLum = canvasFallbackGammaLum;
     let shimmer = 0;
 
-    let updateBase = false;
     if (canvasIridize) {
-      if (i % iridizeBandSize === 0) updateBase = true;
-    } else if (perIndexColor || i === 0) {
-      updateBase = true;
-    }
-    if (updateBase) {
-      if (canvasIridize) {
+      if (i % iridizeBandSize === 0) {
         const iriIntensity = iridizeAmount * Math.max(0, normalizedAmp - 0.15) / 0.85;
         shimmer = Math.sin(spikeTimeAcc * 4.1 + (i / iridizeBandSize) * 0.72) * 0.5 + 0.5;
         const chromaPulse = Math.max(shimmer, beatPulse * 0.75);
         localHue = (localHue + iriIntensity * (28 + chromaPulse * 38) + beatPulse * 14 * iridizeAmount + 360) % 360;
         localSat = Math.min(100, localSat + iriIntensity * 66 + beatPulse * 18 * iridizeAmount);
         localLum = Math.min(76, localLum + iriIntensity * 11 * chromaPulse + beatPulse * 5 * iridizeAmount);
+        ctx.strokeStyle = `hsla(${localHue},${localSat}%,${localLum}%,${finalAlpha})`;
       }
-      const baseColor = `hsla(${localHue},${localSat}%,${localLum}%,${finalAlpha})`;
-      currentBaseKey = baseColor;
-      let path = baseBucketPaths.get(currentBaseKey);
-      if (!path) {
-        path = new Path2D();
-        baseBucketPaths.set(currentBaseKey, path);
-      }
-      currentBasePath = path;
-
-      // ── Chroma Flare (fresh Iridize design) ─────────────────────────────────
-      // Own hue lane (offset from the base spike color, not derived from it),
-      // own alpha that only ever adds via 'lighter' compositing, and a distinct
-      // beat-reactive surge so it reads as its own effect, not a recolor.
-      if (canvasIridize) {
-        const flareEnergy = iridizeAmount * (0.35 + beatPulse * 0.65);
-        const flareHue = (localHue + 150 + shimmer * 40 + spikeTimeAcc * 30) % 360;
-        const flareSat = Math.min(100, 70 + flareEnergy * 30);
-        const flareLum = Math.min(85, 55 + flareEnergy * 30 + beatPulse * 10);
-        const flareAlpha = Math.min(1, finalAlpha * (0.55 + flareEnergy * 1.1));
-        currentFlareKey = `hsla(${flareHue.toFixed(1)},${flareSat.toFixed(1)}%,${flareLum.toFixed(1)}%,${flareAlpha.toFixed(3)})`;
-        let flarePath = flareBucketPaths.get(currentFlareKey);
-        if (!flarePath) {
-          flarePath = new Path2D();
-          flareBucketPaths.set(currentFlareKey, flarePath);
-        }
-        currentFlarePath = flarePath;
-      }
+    } else if (spectrumMode || i === 0 || (params.beatDetect && (params.beatPulseType === 'color' || params.beatPulseType === 'all'))) {
+      ctx.strokeStyle = `hsla(${localHue},${localSat}%,${localLum}%,${finalAlpha})`;
     }
 
     let binZoomMod = 1.0;
@@ -190,37 +148,40 @@ export function renderCanvasSpikeRing(frame: CanvasSpikeRingFrame): void {
     const tipX = cosA * (baseR + spikeLen);
     const tipY = sinA * (baseR + spikeLen);
 
-    currentBasePath!.moveTo(x0, y0);
-    currentBasePath!.lineTo(tipX, tipY);
+    ctx.lineWidth = Number(params.lineWidth) || 1;
+    ctx.beginPath();
+    ctx.moveTo(x0, y0);
+    ctx.lineTo(tipX, tipY);
+    ctx.stroke();
     if (params.mirror > 0) {
-      currentBasePath!.moveTo(x0, y0);
-      currentBasePath!.lineTo(cosA * (baseR - amp * params.mirror), sinA * (baseR - amp * params.mirror));
+      ctx.beginPath();
+      ctx.moveTo(x0, y0);
+      ctx.lineTo(cosA * (baseR - amp * params.mirror), sinA * (baseR - amp * params.mirror));
+      ctx.stroke();
     }
 
-    // Flare streak: only past the tip, only when there's meaningful amplitude,
-    // so silence stays quiet and the effect reads as riding the transient.
-    if (canvasIridize && normalizedAmp > 0.12 && currentFlarePath) {
+    // Chroma Flare (fresh Iridize design, Sprint "Integrity Lock"): own hue
+    // lane, own additive alpha via 'lighter' compositing so it only ever
+    // adds light on top of the base spike, never dims or desaturates it.
+    // Gated well above the signal chain's own noise floor (see flareAmpGate
+    // above) so it rides genuine musical peaks, not a sustained hardware
+    // noise-floor reading in one narrow bin range.
+    if (canvasIridize && normalizedAmp > flareAmpGate) {
       const flareEnergy = iridizeAmount * (0.35 + beatPulse * 0.65);
+      const flareHue = (localHue + 150 + shimmer * 40 + spikeTimeAcc * 30) % 360;
+      const flareSat = Math.min(100, 70 + flareEnergy * 30);
+      const flareLum = Math.min(85, 55 + flareEnergy * 30 + beatPulse * 10);
+      const flareAlpha = Math.min(1, finalAlpha * (0.55 + flareEnergy * 1.1));
       const flareLen = spikeLen * (0.35 + flareEnergy * 0.9);
-      currentFlarePath.moveTo(tipX, tipY);
-      currentFlarePath.lineTo(cosA * (baseR + spikeLen + flareLen), sinA * (baseR + spikeLen + flareLen));
+      const priorComposite = ctx.globalCompositeOperation;
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.strokeStyle = `hsla(${flareHue.toFixed(1)},${flareSat.toFixed(1)}%,${flareLum.toFixed(1)}%,${flareAlpha.toFixed(3)})`;
+      ctx.lineWidth = Math.max(1, (Number(params.lineWidth) || 1) * 0.85);
+      ctx.beginPath();
+      ctx.moveTo(tipX, tipY);
+      ctx.lineTo(cosA * (baseR + spikeLen + flareLen), sinA * (baseR + spikeLen + flareLen));
+      ctx.stroke();
+      ctx.globalCompositeOperation = priorComposite;
     }
-  }
-
-  ctx.lineWidth = lineWidthPx;
-  for (const [color, path] of baseBucketPaths) {
-    ctx.strokeStyle = color;
-    ctx.stroke(path);
-  }
-
-  if (canvasIridize && flareBucketPaths.size > 0) {
-    const priorComposite = ctx.globalCompositeOperation;
-    ctx.globalCompositeOperation = 'lighter';
-    ctx.lineWidth = Math.max(1, lineWidthPx * 0.85);
-    for (const [color, path] of flareBucketPaths) {
-      ctx.strokeStyle = color;
-      ctx.stroke(path);
-    }
-    ctx.globalCompositeOperation = priorComposite;
   }
 }
