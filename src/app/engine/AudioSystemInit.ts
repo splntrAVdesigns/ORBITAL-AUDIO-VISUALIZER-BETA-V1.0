@@ -16,7 +16,8 @@ import { createPlaybackController } from '../src/app/hooks/usePlaybackController
 import { formatDuration as formatTime } from '../utils/trackMetadataManager';
 import type { MutableRefObject } from 'react';
 import { bpmClockRuntime } from '../runtime/bpm/BpmClockRuntime';
-import { analyzeTempoFromChannels, type BpmDetectionResult } from '../runtime/bpm/BpmDetector';
+import { type BpmDetectionResult } from '../runtime/bpm/BpmDetector';
+import { runBpmAnalysis, terminateBpmAnalysisWorker } from '../runtime/bpm/BpmAnalysisWorkerClient';
 import { audioObjectUrlRegistry } from '../runtime/audio/AudioObjectUrlRegistry';
 import { LatestOnlySerializedAnalysisQueue } from '../runtime/audio/SerializedBpmAnalysisQueue';
 import { DEVELOPMENT_DIAGNOSTICS_ENABLED } from '../config/runtimeEnvironment';
@@ -307,7 +308,7 @@ export function initAudioSystem(opts: AudioSystemInitOptions): AudioSystemResult
       for (let index = 0; index < audioBuffer.numberOfChannels; index += 1) {
         channels.push(audioBuffer.getChannelData(index));
       }
-      return analyzeTempoFromChannels(channels, audioBuffer.sampleRate);
+      return await runBpmAnalysis(channels, audioBuffer.sampleRate);
     } catch (error) {
       console.error('BPM detection error:', error);
       return null;
@@ -695,6 +696,7 @@ export function initAudioSystem(opts: AudioSystemInitOptions): AudioSystemResult
     cancelPendingMediaLoad?.();
     cancelPendingMediaLoad = null;
     bpmAnalysisQueue.dispose();
+    terminateBpmAnalysisWorker();
     const currentElement = getMediaEl();
     detachMediaElement(currentElement);
     setMediaEl(null);

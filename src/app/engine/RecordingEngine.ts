@@ -4,11 +4,7 @@
  * saved-recording object URLs, bounded capture memory, and GIF export.
  */
 
-import {
-  GIFExporter,
-  formatDuration,
-  waitForGIFLibrary,
-} from '../utils/gifExport';
+import type { GIFExporter as GIFExporterClass } from '../utils/gifExport';
 import { RecordingFramePublisher } from './recording/RecordingFramePublisher';
 import {
   extensionForMimeType,
@@ -102,7 +98,12 @@ export class RecordingEngine {
   private discardCurrentRecording = false;
   private finishingRecording = false;
 
-  private gifExporter: GIFExporter | null = null;
+  private gifExporter: GIFExporterClass | null = null;
+  // Sprint B: gifExport.ts (~20KB) plus its vendored gif.js glue is only ever
+  // needed once a user actually exports a GIF. Loaded on demand via
+  // import(), cached here once fetched so init()'s 500ms prefetch and the
+  // later real export share one module instance instead of importing twice.
+  private gifExportModule: typeof import('../utils/gifExport') | null = null;
   private gifExportState = { isRecording: false, isEncoding: false, progress: 0 };
   private gifStartTime = 0;
   private gifTargetDuration = 0;
@@ -171,7 +172,10 @@ export class RecordingEngine {
     this.gifPreflightController = new AbortController();
     this.gifPreflightTimer = setTimeout(() => {
       this.gifPreflightTimer = null;
-      void waitForGIFLibrary(3000, this.gifPreflightController?.signal);
+      void import('../utils/gifExport').then((mod) => {
+        this.gifExportModule = mod;
+        void mod.waitForGIFLibrary(3000, this.gifPreflightController?.signal);
+      });
     }, 500);
   }
 
@@ -502,14 +506,16 @@ export class RecordingEngine {
 
   // ── Private: GIF Export ───────────────────────────────────────────────────
 
-  private initGIFExporter(): void {
+  private async initGIFExporter(): Promise<void> {
     if (!this.gifExporter) {
-      this.gifExporter = new GIFExporter(this.opts.canvas);
+      const mod = this.gifExportModule ?? (this.gifExportModule = await import('../utils/gifExport'));
+      this.gifExporter = new mod.GIFExporter(this.opts.canvas);
     }
   }
 
   private async startGIFRecording(): Promise<void> {
-    this.initGIFExporter();
+    await this.initGIFExporter();
+    const gifModule = this.gifExportModule!;
 
     const duration = 5;
     this.gifTargetDuration = duration;
@@ -535,7 +541,7 @@ export class RecordingEngine {
         this.updateGIFProgressModal();
         const elapsed = (performance.now() - this.gifStartTime) / 1000;
         const remaining = Math.max(0, this.gifTargetDuration - elapsed);
-        this.opts.trackMetadata.recTime = progress < 0.5 ? formatDuration(remaining) : 'ENC';
+        this.opts.trackMetadata.recTime = progress < 0.5 ? gifModule.formatDuration(remaining) : 'ENC';
         this.opts.updateMetadataDisplay();
       },
       onError: (error: Error) => {

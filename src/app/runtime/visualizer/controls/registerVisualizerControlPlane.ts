@@ -222,7 +222,13 @@ export function registerVisualizerControlPlane(options: VisualizerControlPlaneOp
 
         // CRITICAL FIX: Preserve existing amplitude data when resizing
         // This prevents visual collapse when FFT slider is dragged
-        const newLength = audioBuffers.timeArr.length;
+        // Sprint B: this must match `N = filteredFreqArr.length` (frequencyBinCount)
+        // in the frame loop's spike buffers, not the time-domain fftSize (2x too
+        // large). Previously every FFT slider change ran a full linear-interp
+        // resample here at the wrong size, then the frame controller's own
+        // `ampBuf.length !== N` check fired on the very next frame and redid the
+        // resize with a cruder nearest-neighbor copy, discarding this one entirely.
+        const newLength = analyser.frequencyBinCount;
         spikeFeature.ampBuf = new Float32Array(newLength);
         spikeFeature.ampEcho1 = new Float32Array(newLength);
         spikeFeature.ampEcho2 = new Float32Array(newLength);
@@ -230,8 +236,7 @@ export function registerVisualizerControlPlane(options: VisualizerControlPlaneOp
         spikeFeature.tempSmoothingBuf = new Float32Array(newLength);
 
         // Copy old data to new buffers (resample if needed)
-        const oldLength = oldAmpBuf.length;
-        if (newLength >= oldLength) {
+        const oldLength = oldAmpBuf.length;        if (newLength >= oldLength) {
           // Upsampling: interpolate to fill new buffer
           for (let i = 0; i < newLength; i++) {
             const oldIdx = (i / newLength) * oldLength;

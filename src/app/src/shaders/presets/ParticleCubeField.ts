@@ -1,11 +1,17 @@
 import type { AudioData, ShaderParams, ShaderPreset } from '../ShaderRegistry';
 
 type CubeParticle = { x: number; y: number; z: number; seed: number; phase: number };
+type ProjectedParticle = { x: number; y: number; z: number; a: number; size: number; seed: number };
 
 let ctx: CanvasRenderingContext2D | null = null;
 let canvasWidth = 0;
 let canvasHeight = 0;
 let particles: CubeParticle[] = [];
+// Sprint B: reused across frames, mutated in place in render() below, instead
+// of being allocated fresh (one object per particle) on every single frame —
+// that per-frame allocation was measurable GC churn at typical cube densities
+// (a few hundred particles x 60fps). Rebuilt only when `particles` itself is.
+let projected: ProjectedParticle[] = [];
 let lastResolution = 0;
 let lastFrameTime = 0;
 let smoothEnergy = 0;
@@ -38,6 +44,7 @@ function rebuildParticles(resolution: number) {
       }
     }
   }
+  projected = particles.map(() => ({ x: 0, y: 0, z: 0, a: 0, size: 0, seed: 0 }));
 }
 
 function rotatePoint(x: number, y: number, z: number, rx: number, ry: number, rz: number) {
@@ -153,23 +160,22 @@ export const ParticleCubeFieldShader: ShaderPreset = {
     ctx.lineCap = 'round';
 
     // Draw back-to-front for cleaner depth without WebGL state overhead.
-    const projected: Array<{ x: number; y: number; z: number; a: number; size: number; seed: number }> = [];
     const base = radius * 0.46 * cubeSize;
-    for (const p of particles) {
+    for (let i = 0; i < particles.length; i++) {
+      const p = particles[i];
       const wobble = loose * 0.18 * Math.sin(now * 1.7 + p.phase + smoothEnergy * 4.0);
       const px = (p.x + wobble * (p.seed - 0.5)) * expansion;
       const py = (p.y + wobble * Math.sin(p.phase)) * (1 + mid * 0.18);
       const pz = (p.z * spread + zDrift + wobble * Math.cos(p.phase)) * (1 + bass * 0.28);
       const r = rotatePoint(px, py, pz, rx, ry, rz);
       const perspective = 1.8 / (1.8 + r.z * 0.72);
-      projected.push({
-        x: cx + r.x * base * perspective,
-        y: cy + r.y * base * perspective,
-        z: r.z,
-        a: clamp01(0.22 + perspective * 0.42 + smoothEnergy * 0.22 + smoothBeat * 0.2),
-        size: Math.max(1.1, radius * 0.0065 * perspective * (1 + treble * 0.75 + smoothBeat * 0.45)),
-        seed: p.seed,
-      });
+      const slot = projected[i];
+      slot.x = cx + r.x * base * perspective;
+      slot.y = cy + r.y * base * perspective;
+      slot.z = r.z;
+      slot.a = clamp01(0.22 + perspective * 0.42 + smoothEnergy * 0.22 + smoothBeat * 0.2);
+      slot.size = Math.max(1.1, radius * 0.0065 * perspective * (1 + treble * 0.75 + smoothBeat * 0.45));
+      slot.seed = p.seed;
     }
     projected.sort((a, b) => a.z - b.z);
 
@@ -199,6 +205,7 @@ export const ParticleCubeFieldShader: ShaderPreset = {
 
   cleanup() {
     particles = [];
+    projected = [];
     lastResolution = 0;
     ctx = null;
     lastFrameTime = 0;
