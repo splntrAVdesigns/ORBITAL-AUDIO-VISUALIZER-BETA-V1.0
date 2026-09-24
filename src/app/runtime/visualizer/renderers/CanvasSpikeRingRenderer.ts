@@ -51,23 +51,39 @@ export function renderCanvasSpikeRing(frame: CanvasSpikeRingFrame): void {
   const spectrumMode = Boolean(params.spectrum);
   const canvasIridize = Number(params.iridize) > 0.01;
   const iridizeBandSize = canvasIridize ? Math.max(1, Math.ceil(N / 24)) : N;
-  // Iridize enhancement: 3x the color-shift intensity per direct user
-  // request ("even at 100% too weak, needs 3x, noticeable at 10-20%").
-  // Every downstream use is already clamped (Math.min(100,...) / Math.min(...,...)),
-  // so scaling the input intensity is safe — it just saturates to the clamp
-  // ceiling sooner, which is exactly the "noticeable much earlier" ask.
+  // Iridize enhancement: intensity now follows a front-loaded curve (power
+  // < 1) instead of scaling linearly with the slider — per direct user
+  // feedback that a linear 3x still required ~80% on the slider to read as
+  // visible. A sub-1 exponent means low slider values already produce most
+  // of the curve's range (0.2 -> ~0.52, 0.5 -> ~0.76), so the effect is
+  // clearly present at 10-20% while still reaching full intensity at 100%.
+  // Every downstream use is already clamped (Math.min(100,...) / Math.min(85,...)),
+  // so this is safe regardless of how the curve is shaped.
   const IRIDIZE_INTENSITY_MULT = 3;
+  const iridizeCurve = canvasIridize ? Math.pow(Number(params.iridize), 0.4) : 0;
   // Band-to-band interpolation state: carries the previous band's color
   // forward so each spike smoothly blends from it toward the new band's
   // target across the span of the new band, instead of jumping the instant
-  // a new band starts. Seeded from the base color so the very first band
-  // fades in rather than jumping from nothing.
+  // a new band starts.
   let prevBandHue = effectiveHue;
   let prevBandSat = sat;
   let prevBandLum = canvasFallbackGammaLum;
   let curBandHue = prevBandHue;
   let curBandSat = prevBandSat;
   let curBandLum = prevBandLum;
+  // Seam fix: the ring is circular (i=N-1 sits visually next to i=0, at
+  // angle 0 / 3 o'clock), but a single forward pass has no natural way to
+  // blend the LAST band back toward the FIRST band's color — without this,
+  // there's a hard, visible seam exactly at i=0 every time. Fix: remember
+  // band 0's own computed target (firstBandHue/Sat/Lum, captured the first
+  // time the loop computes it, below), and when the pass reaches the last
+  // band boundary, blend toward that same remembered color instead of
+  // computing an unrelated new one — closing the loop with zero seam.
+  let firstBandHue = 0;
+  let firstBandSat = 0;
+  let firstBandLum = 0;
+  let firstBandCaptured = false;
+  const lastBandStart = canvasIridize ? Math.floor((N - 1) / iridizeBandSize) * iridizeBandSize : 0;
 
   const nyquist = sampleRate / 2;
   const minAudibleHz = 90;
@@ -118,12 +134,32 @@ export function renderCanvasSpikeRing(frame: CanvasSpikeRingFrame): void {
         prevBandHue = curBandHue;
         prevBandSat = curBandSat;
         prevBandLum = curBandLum;
-        const iriIntensity = (params.iridize * IRIDIZE_INTENSITY_MULT) * Math.max(0, normalizedAmp - 0.15) / 0.85;
-        const shimmer = Math.sin(spikeTimeAcc * 4.1 + (i / iridizeBandSize) * 0.72) * 0.5 + 0.5;
-        const chromaPulse = Math.max(shimmer, beatPulse * 0.75);
-        curBandHue = (localHue + iriIntensity * (28 + chromaPulse * 38) + beatPulse * 14 * params.iridize * IRIDIZE_INTENSITY_MULT + 360) % 360;
-        curBandSat = Math.min(100, localSat + iriIntensity * 66 + beatPulse * 18 * params.iridize * IRIDIZE_INTENSITY_MULT);
-        curBandLum = Math.min(85, localLum + iriIntensity * 11 * chromaPulse + beatPulse * 5 * params.iridize * IRIDIZE_INTENSITY_MULT);
+        if (i === lastBandStart && firstBandCaptured) {
+          // Closing the loop: blend the final band toward the exact same
+          // color band 0 started from, instead of an unrelated new target,
+          // so the wrap from i=N-1 back to i=0 has zero seam.
+          curBandHue = firstBandHue;
+          curBandSat = firstBandSat;
+          curBandLum = firstBandLum;
+        } else {
+          // Amplitude gate lowered (0.15 -> 0.08) so quieter/moderate
+          // content still shows color shift instead of reading as zero —
+          // this was compounding with the linear slider scaling to make
+          // the whole effect require both a loud band AND a high slider
+          // setting before anything was visible anywhere.
+          const iriIntensity = (iridizeCurve * IRIDIZE_INTENSITY_MULT) * Math.max(0, normalizedAmp - 0.08) / 0.92;
+          const shimmer = Math.sin(spikeTimeAcc * 4.1 + (i / iridizeBandSize) * 0.72) * 0.5 + 0.5;
+          const chromaPulse = Math.max(shimmer, beatPulse * 0.75);
+          curBandHue = (localHue + iriIntensity * (28 + chromaPulse * 38) + beatPulse * 14 * iridizeCurve * IRIDIZE_INTENSITY_MULT + 360) % 360;
+          curBandSat = Math.min(100, localSat + iriIntensity * 66 + beatPulse * 18 * iridizeCurve * IRIDIZE_INTENSITY_MULT);
+          curBandLum = Math.min(85, localLum + iriIntensity * 11 * chromaPulse + beatPulse * 5 * iridizeCurve * IRIDIZE_INTENSITY_MULT);
+          if (i === 0) {
+            firstBandHue = curBandHue;
+            firstBandSat = curBandSat;
+            firstBandLum = curBandLum;
+            firstBandCaptured = true;
+          }
+        }
       }
       // Soft fluid blend, every spike: interpolate from the previous band's
       // color toward this band's target across the span of the band, so
