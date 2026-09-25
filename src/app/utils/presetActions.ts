@@ -531,6 +531,7 @@ export function createPresetActions(ctx: PresetActionsContext) {
       setSlider("#spikeAttack", preset.spikeAttack !== undefined ? preset.spikeAttack : 0.20);
       setSlider("#spikeTightness", preset.spikeTightness !== undefined ? preset.spikeTightness : 2.0);
       setSlider("#spikeBloom", preset.spikeBloom !== undefined ? preset.spikeBloom : 0.5);
+      setSlider("#spikeVariety", preset.spikeVariety !== undefined ? preset.spikeVariety : defaultParams.spikeVariety);
       setSlider("#transientBoost", preset.transientBoost !== undefined ? preset.transientBoost : 0.5);
       
       // Auto Zoom
@@ -861,6 +862,7 @@ export function createPresetActions(ctx: PresetActionsContext) {
         spikeAttack: getSlider("#spikeAttack"),
         spikeTightness: getSlider("#spikeTightness"),
         spikeBloom: getSlider("#spikeBloom"),
+        spikeVariety: getSlider("#spikeVariety"),
         transientBoost: getSlider("#transientBoost"),
         autoZoom: getCheckbox("#autoZoom"),
         autoRotateSpeed: parseInt(getSelect("#autoRotateSpeed"), 10) || 1,
@@ -1062,7 +1064,8 @@ export function createPresetActions(ctx: PresetActionsContext) {
           fftSize: pick((navigator.hardwareConcurrency || 8) <= 4 ? [9] : [9, 10]),
           spikeAttack: rand(0.22, 0.68),
           spikeTightness: rand(0.34, 0.88),
-          spikeBloom: rand(0.02, 0.38),
+          spikeBloom: rand(0, 0.75),
+          spikeVariety: rand(0.1, 0.9),
           transientBoost: rand(0, 0.46),
           autoRotateSpeed: pick([1, 1, 1, 2]),
           palette: Math.floor(Math.random() * palettes.length),
@@ -1753,6 +1756,7 @@ export function createPresetActions(ctx: PresetActionsContext) {
       updateControl('#spikeAttack', defaultParams.spikeAttack);
       updateControl('#spikeTightness', defaultParams.spikeTightness);
       updateControl('#spikeBloom', defaultParams.spikeBloom);
+      updateControl('#spikeVariety', defaultParams.spikeVariety);
       updateControl('#transientBoost', defaultParams.transientBoost);
     }
     
