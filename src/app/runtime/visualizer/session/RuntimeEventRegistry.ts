@@ -22,6 +22,12 @@ export class RuntimeEventRegistry {
     listener: (this: Document, event: DocumentEventMap[K]) => unknown,
     options?: AddEventListenerOptions | boolean,
   ): void;
+  listen<K extends keyof HTMLElementEventMap>(
+    target: HTMLElement,
+    type: K,
+    listener: (this: HTMLElement, event: HTMLElementEventMap[K]) => unknown,
+    options?: AddEventListenerOptions | boolean,
+  ): void;
   listen(
     target: EventTarget,
     type: string,

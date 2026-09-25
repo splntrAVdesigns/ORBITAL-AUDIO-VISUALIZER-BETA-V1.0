@@ -1,10 +1,12 @@
+import type { BeatEffectRuntime } from '../../audio/BeatEffectRuntime';
+
 export interface ResettableRuntime {
   reset(): void;
 }
 
 export interface AudioFrameStateRuntimeOptions {
   createVisualAudioRuntime: () => ResettableRuntime;
-  createBeatEffectRuntime: () => ResettableRuntime;
+  createBeatEffectRuntime: () => BeatEffectRuntime;
   createBeatDetectionRuntime: () => ResettableRuntime;
   createCoreParticleImpulseRuntime: () => ResettableRuntime;
 }
@@ -19,13 +21,14 @@ export interface AudioFrameStateRuntimeOptions {
  */
 export class AudioFrameStateRuntime {
   readonly visualAudioRuntime: ResettableRuntime & Record<string, any>;
-  readonly beatEffectRuntime: ResettableRuntime & Record<string, any>;
+  // Sprint C: concrete type so callers get real method signatures under strict mode.
+  readonly beatEffectRuntime: BeatEffectRuntime;
   readonly beatDetectionRuntime: ResettableRuntime & Record<string, any>;
   readonly coreParticleImpulseRuntime: ResettableRuntime & Record<string, any>;
 
   constructor(options: AudioFrameStateRuntimeOptions) {
     this.visualAudioRuntime = options.createVisualAudioRuntime() as ResettableRuntime & Record<string, any>;
-    this.beatEffectRuntime = options.createBeatEffectRuntime() as ResettableRuntime & Record<string, any>;
+    this.beatEffectRuntime = options.createBeatEffectRuntime();
     this.beatDetectionRuntime = options.createBeatDetectionRuntime() as ResettableRuntime & Record<string, any>;
     this.coreParticleImpulseRuntime = options.createCoreParticleImpulseRuntime() as ResettableRuntime & Record<string, any>;
   }

@@ -56,7 +56,9 @@ test('Halo Comet is a bounded halo-pass feature with no independent scheduler', 
 
 test('Orbital Energy uses seconds and Outer Halo reset covers every owned control', () => {
   const canvas = read('src/app/renderers/canvasLayerRenderer.ts');
-  const actions = read('src/app/utils/presetActions.ts');
+  // Sprint C: per-section reset functions moved to their own module.
+  const actions = read('src/app/utils/presetActions/sectionResets.ts');
+  assert.ok(actions.indexOf('function resetOuterHaloCenterLayer') >= 0 && actions.indexOf('function resetDots') > actions.indexOf('function resetOuterHaloCenterLayer'));
   const resetBlock = actions.slice(
     actions.indexOf('function resetOuterHaloCenterLayer'),
     actions.indexOf('function resetDots'),

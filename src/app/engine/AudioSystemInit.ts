@@ -471,7 +471,11 @@ export function initAudioSystem(opts: AudioSystemInitOptions): AudioSystemResult
       // Sprint 22I: analyser-only mic trim. Browser mic levels in Vercel/Chrome can
       // arrive quiet with autoGainControl disabled, so we boost visual detection
       // before the analyser chain without changing any user-facing controls.
-      if (micVisualGainNode) { try { micVisualGainNode.disconnect(); } catch { } }
+      // Re-read after the await: a second mic request can set this node while
+      // getUserMedia is pending, so the guard is real even though TypeScript
+      // narrowed the variable to null earlier in this function.
+      const pendingMicGainNode = micVisualGainNode as GainNode | null;
+      if (pendingMicGainNode) { try { pendingMicGainNode.disconnect(); } catch { } }
       micVisualGainNode = AC.createGain();
       micVisualGainNode.gain.value = 1.68;
       source.connect(micVisualGainNode);

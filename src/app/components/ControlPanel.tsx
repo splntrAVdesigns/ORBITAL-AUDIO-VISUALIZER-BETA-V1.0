@@ -1,4 +1,5 @@
-import { memo, useCallback } from 'react';
+import { memo, useCallback, type Dispatch, type SetStateAction } from 'react';
+import type { PlaylistTrack } from '../types/playlist';
 import { ChevronDown, Settings, SkipBack, SkipForward } from 'lucide-react';
 import { AstralShaperSettings } from './AstralShaperSettings';
 import { CoreTexturesSettings } from './CoreTexturesSettings';
@@ -37,7 +38,7 @@ export interface ControlPanelProps {
   audioSectionCollapsed: any;
   autoAdvance: any;
   colorSectionCollapsed: any;
-  currentTrackIndex: any;
+  currentTrackIndex: number;
   dotsSectionCollapsed: any;
   handleMacroChange: any;
   handleMacroCommit: any;
@@ -47,17 +48,17 @@ export interface ControlPanelProps {
   macroValues: any;
   monitorEnabled: any;
   outerHaloSectionCollapsed: any;
-  playlist: any;
+  playlist: PlaylistTrack[];
   setAnimationSectionCollapsed: any;
   setAudioSectionCollapsed: any;
   setAutoAdvance: any;
   setColorSectionCollapsed: any;
-  setCurrentTrackIndex: any;
+  setCurrentTrackIndex: Dispatch<SetStateAction<number>>;
   setDotsSectionCollapsed: any;
   setMacroSet: any;
   setMonitorEnabled: any;
   setOuterHaloSectionCollapsed: any;
-  setPlaylist: any;
+  setPlaylist: Dispatch<SetStateAction<PlaylistTrack[]>>;
   setSettingsPanelOpen: any;
   setShuffleEnabled: any;
   setSpikeAttackVal: any;
@@ -345,7 +346,7 @@ export const ControlPanel = memo(function ControlPanel(props: ControlPanelProps)
               // If multiple files, add to playlist
               if (files.length > 1) {
                 devLog('📦 Multiple files detected, adding to playlist...');
-                const newTracks = [];
+                const newTracks: PlaylistTrack[] = [];
                 const rejectedFiles: string[] = [];
                 for (let i = 0; i < files.length; i++) {
                   const file = files[i];
@@ -847,7 +848,7 @@ export const ControlPanel = memo(function ControlPanel(props: ControlPanelProps)
                 const files = e.dataTransfer.files;
                 if (!files || files.length === 0) return;
                 
-                const newTracks = [];
+                const newTracks: PlaylistTrack[] = [];
                 const rejectedFiles: string[] = [];
                 
                 for (let i = 0; i < files.length; i++) {
