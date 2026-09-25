@@ -197,7 +197,7 @@ export const presets: Preset[] = [
       hueSpeed: 0.35, zoomOsc: 0.0, fftSize: 9, reactivity: 0.52,
       frequencySmoothing: true, beatReactivityBoost: false, autoRotateSpeed: 2,
       palette: 0,
-      spikeAttack: 0.34, spikeTightness: 0.62, spikeBloom: 0.15, spikeVariety: 0.35, transientBoost: 0.08,
+      spikeAttack: 0.34, spikeTightness: 0.62, spikeBloom: 0.15, spikeVariety: 0.10, transientBoost: 0.08,
       astralShaper: false, shapeOscillate: false, beatDetect: false,
       ...cleanCenter,
       centerImageMotionType: 'verticalFloat', centerImageMotionAmount: 0.36, centerImageMotionIntensity: 0.28,

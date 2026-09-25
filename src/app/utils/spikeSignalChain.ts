@@ -129,13 +129,19 @@ export function processSpikeSignalChain(
       target += transient * (0.55 + beatAccent * 1.15);
     }
 
-    // Optional transient boost stays transient-only.
-    if (params.transientBoost > 0.001) {
-      target += transient * params.transientBoost * 0.62;
-    }
-
     // Soft knee, not hard clamp. Prevents sustained plateau/crown behavior.
     target = target / (1 + Math.max(0, target - softCeiling) * 2.25);
+
+    // Sprint D2: Transient Boost, layered after the soft knee instead of before
+    // it. Previously the boosted amount was squashed by the same compressor as
+    // the base signal, and transients land exactly where the base signal is
+    // already loud -- so most of the boost was being absorbed away. Now it adds
+    // an accent on top of the compressed value, easing off as the bin nears
+    // full height so a boosted attack can briefly punch to the max without a
+    // hard clip, instead of quietly blending back into the crowd.
+    if (params.transientBoost > 0.001) {
+      target += transient * params.transientBoost * 1.05 * (1 - target * 0.4);
+    }
     target = clamp01(target);
     buffers.prevTarget[i] = target;
 
