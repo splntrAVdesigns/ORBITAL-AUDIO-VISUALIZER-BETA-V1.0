@@ -25,6 +25,8 @@ export interface PresetSettings {
   glowStrength: number;
   haloCometEnabled?: boolean;
   haloCometSpeed?: number;
+  haloStrobeEnabled?: boolean;
+  haloStrobeDivision?: string;
   haloCometDirection?: number;
   haloCometThickness?: number;
   haloCometTailLength?: number;

@@ -217,6 +217,8 @@ export function createPresetActions(ctx: PresetActionsContext) {
       setSlider("#glowStrength", preset.glowStrength);
       setCheckbox("#haloCometEnabled", preset.haloCometEnabled ?? defaultParams.haloCometEnabled);
       setSlider("#haloCometSpeed", preset.haloCometSpeed ?? defaultParams.haloCometSpeed);
+      setCheckbox("#haloStrobeEnabled", preset.haloStrobeEnabled ?? defaultParams.haloStrobeEnabled);
+      setSlider("#haloStrobeDivision", preset.haloStrobeDivision ?? defaultParams.haloStrobeDivision);
       setSlider("#haloCometDirection", preset.haloCometDirection ?? defaultParams.haloCometDirection);
       setSlider("#haloCometThickness", preset.haloCometThickness ?? defaultParams.haloCometThickness);
       setSlider("#haloCometTailLength", preset.haloCometTailLength ?? defaultParams.haloCometTailLength);
@@ -1365,6 +1367,8 @@ export function createPresetActions(ctx: PresetActionsContext) {
       if (orbitalDirCheckbox2) orbitalDirCheckbox2.checked = (Number(defaultParams.orbitalDirection) === -1);
       updateSlider('#haloCometEnabled', defaultParams.haloCometEnabled);
       updateSlider('#haloCometSpeed', defaultParams.haloCometSpeed);
+      updateSlider('#haloStrobeEnabled', defaultParams.haloStrobeEnabled);
+      updateSlider('#haloStrobeDivision', defaultParams.haloStrobeDivision);
       updateSlider('#haloCometDirection', defaultParams.haloCometDirection);
       updateSlider('#haloCometThickness', defaultParams.haloCometThickness);
       updateSlider('#haloCometTailLength', defaultParams.haloCometTailLength);

@@ -33,7 +33,9 @@ export function initializeVisualizerControlDefaults(
     const initializeUIFromDefaults = () => {
 
       // Helper to set slider value AND trigger event
-      const setSlider = (id: string, value: number) => {
+      // Also used for <select> string values (e.g. rotationQuantize-style dropdowns);
+      // the DOM write is String(value) either way, so the value type is widened.
+      const setSlider = (id: string, value: number | string) => {
         const el = query(id) as HTMLInputElement;
         if (el) {
           el.value = String(value);
@@ -85,6 +87,8 @@ export function initializeVisualizerControlDefaults(
       if (orbitalDirCheckbox) orbitalDirCheckbox.checked = (Number(defaultParams.orbitalDirection) === -1);
       setCheckbox('#haloCometEnabled', defaultParams.haloCometEnabled);
       setSlider('#haloCometSpeed', defaultParams.haloCometSpeed);
+      setCheckbox('#haloStrobeEnabled', defaultParams.haloStrobeEnabled);
+      setSlider('#haloStrobeDivision', defaultParams.haloStrobeDivision);
       setSlider('#haloCometDirection', defaultParams.haloCometDirection);
       setSlider('#haloCometThickness', defaultParams.haloCometThickness);
       setSlider('#haloCometTailLength', defaultParams.haloCometTailLength);

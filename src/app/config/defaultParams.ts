@@ -20,6 +20,10 @@ export const defaultParams = {
   orbitalWidth: 0.3, // Pulse width (0.1=narrow comet, 1.0=wide glow)
   orbitalDirection: 1, // Direction: 1=clockwise, -1=counter-clockwise
   haloCometEnabled: false,
+
+  // Halo Strobe: LFO-driven fade on the halo ring, synced to BPM division.
+  haloStrobeEnabled: false,
+  haloStrobeDivision: '1/4', // '1/1' | '1/2' | '1/4' | '1/8'
   haloCometSpeed: 0.18, // Automatic orbit speed in revolutions per second
   haloCometDirection: 1, // 1=right/clockwise, -1=left/counter-clockwise
   haloCometThickness: 3.0,

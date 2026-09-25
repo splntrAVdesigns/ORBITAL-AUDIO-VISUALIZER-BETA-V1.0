@@ -1,4 +1,5 @@
 import { buildVuMeterGradients } from '../runtime/colorPipeline';
+import { getSecondsPerDivision, type RotationQuantizeDivision } from '../utils/rotationSyncEngine';
 import { type ColorPalette } from '../data/colorPalettes';
 import type { CenterEmitterGeometry } from '../runtime/visualizer/renderers/CenterEmitterGeometry';
 
@@ -214,6 +215,28 @@ export function renderOuterHalo(options: {
   if (halo <= 0.01) return;
   const haloStartedAt = timings ? performance.now() : 0;
 
+  // Halo Strobe: LFO gain synced to BPM division, an opacity multiplier only
+  // (no extra draw calls, same passes as always). Envelope is a fast attack
+  // eased in over the first ~12% of the cycle, then a slower eased release
+  // over the rest -- a heartbeat/pulse feel rather than a linear flicker,
+  // which reads poorly at fast divisions like 1/8.
+  let haloStrobeGain = 1;
+  if (params.haloStrobeEnabled) {
+    const periodSeconds = Math.max(0.05, getSecondsPerDivision(
+      Number(params.bpm) || 174,
+      (params.haloStrobeDivision || '1/4') as RotationQuantizeDivision,
+    ));
+    const phase = ((timeMs / 1000) % periodSeconds) / periodSeconds;
+    const attackFrac = 0.12;
+    if (phase < attackFrac) {
+      const t = phase / attackFrac;
+      haloStrobeGain = t * t * (3 - 2 * t);
+    } else {
+      const t = (phase - attackFrac) / (1 - attackFrac);
+      haloStrobeGain = 1 - t * t * (3 - 2 * t);
+    }
+  }
+
   let haloLum = lum;
   const satBurstActive = params.beatDetect && params.effectAmount > 0.01 && (params.beatPulseType === 'all' || params.beatPulseType === 'flash');
   if (satBurstActive) {
@@ -234,6 +257,7 @@ export function renderOuterHalo(options: {
     const haloWidth = Math.min(4, 1.2 + halo * 2.8);
     ctx.strokeStyle = grd;
     ctx.lineWidth = haloWidth;
+    ctx.globalAlpha = haloStrobeGain;
     ctx.beginPath();
     ctx.arc(0, 0, RH, 0, Math.PI * 2);
     ctx.stroke();
@@ -246,7 +270,7 @@ export function renderOuterHalo(options: {
 
     for (let i = 1; i <= passes; i++) {
       const a = bloomAlpha * (1 - i / (passes + 1));
-      ctx.globalAlpha = a;
+      ctx.globalAlpha = a * haloStrobeGain;
       ctx.lineWidth = haloWidth + i * 3.5 * extendedSpread;
       ctx.beginPath();
       ctx.arc(0, 0, RH, 0, Math.PI * 2);
@@ -260,7 +284,7 @@ export function renderOuterHalo(options: {
       const pulseSpeed = params.orbitalEnergy * 2.0 * params.orbitalDirection;
       const pulseAngle = ((timeMs / 1000) * pulseSpeed) % (Math.PI * 2);
       const pulseWidth = Math.max(0.08, params.orbitalWidth * Math.PI * 0.5);
-      const orbitalAlpha = Math.min(1, halo * params.orbitalEnergy);
+      const orbitalAlpha = Math.min(1, halo * params.orbitalEnergy) * haloStrobeGain;
       const cachedPath = getOrbitalEnergyPath(ctx, pulseWidth);
       const orbitalLightness = Math.min(98, haloLum + 26 * params.orbitalEnergy);
       ctx.save();

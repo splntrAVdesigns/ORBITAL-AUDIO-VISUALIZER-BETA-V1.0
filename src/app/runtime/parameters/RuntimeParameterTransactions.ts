@@ -177,6 +177,7 @@ const enumValues: Partial<Record<RuntimeParameterKey, readonly string[]>> = {
   motionBlurMode: ['multiply', 'alpha'],
   rotationSyncMode: ['free', 'bpm', 'quantized', 'pingpong', 'oscillator'],
   rotationQuantize: ['4/1', '2/1', '1/1', '1/2', '1/4', '1/8'],
+  haloStrobeDivision: ['1/1', '1/2', '1/4', '1/8'],
   centerImageMotionType: [
     'none', 'slowDrift', 'staticDrift', 'floating', 'verticalFloat',
     'horizontalFloat', 'slowFloat', 'orbitDrift', 'organicDrift',

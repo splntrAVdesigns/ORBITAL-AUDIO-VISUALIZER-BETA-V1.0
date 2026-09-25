@@ -302,6 +302,8 @@ export function registerVisualizerControlPlane(options: VisualizerControlPlaneOp
     bind("#orbitalDirection", el => params.orbitalDirection = el.checked ? -1 : 1); // Toggle: checked=counter-clockwise, unchecked=clockwise
     bind("#haloCometEnabled", el => params.haloCometEnabled = el.checked);
     bind("#haloCometSpeed", el => params.haloCometSpeed = parseFloat(el.value));
+    bind("#haloStrobeEnabled", el => params.haloStrobeEnabled = el.checked);
+    bind("#haloStrobeDivision", el => params.haloStrobeDivision = el.value);
     bind("#haloCometDirection", el => params.haloCometDirection = parseFloat(el.value) < 0 ? -1 : 1);
     bind("#haloCometThickness", el => params.haloCometThickness = parseFloat(el.value));
     bind("#haloCometTailLength", el => params.haloCometTailLength = parseFloat(el.value));

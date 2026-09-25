@@ -138,6 +138,8 @@ export function createSectionResets({ ctx, params, applyMacro, paletteLabel }: S
       updateControl('#orbitalDirection', Number(defaultParams.orbitalDirection) === -1);
       updateControl('#haloCometEnabled', defaultParams.haloCometEnabled);
       updateControl('#haloCometSpeed', defaultParams.haloCometSpeed);
+      updateControl('#haloStrobeEnabled', defaultParams.haloStrobeEnabled);
+      updateControl('#haloStrobeDivision', defaultParams.haloStrobeDivision);
       updateControl('#haloCometDirection', defaultParams.haloCometDirection);
       updateControl('#haloCometThickness', defaultParams.haloCometThickness);
       updateControl('#haloCometTailLength', defaultParams.haloCometTailLength);
