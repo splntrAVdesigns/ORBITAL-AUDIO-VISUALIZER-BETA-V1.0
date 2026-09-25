@@ -107,6 +107,7 @@ export function initializeVisualizerControlDefaults(
       setSlider('#spikeAttack', defaultParams.tail); // 🎯 Uses tail parameter (spike attack/tail length)
       setSlider('#spikeTightness', defaultParams.spikeTightness); // 🎯 Spike thickness slider
       setSlider('#spikeBloom', defaultParams.spikeBloom);
+      setSlider('#spikeVariety', defaultParams.spikeVariety);
       setSlider('#transientBoost', defaultParams.transientBoost);
 
       // Effects

@@ -108,7 +108,8 @@ export const defaultParams = {
   spikeTightness: 0.6, // 🎯 Spike amplitude/spread control (0.2-1.0, 75% = default)
   bassReduce: 0.0, // Legacy spike tone control retained for reset/import compatibility
   frequencyMix: 0.5, // Legacy spike frequency blend retained for reset/import compatibility
-  spikeBloom: 0.0, // 🔥 Glow/bloom effect intensity (0-1.0, 0% = default)
+  spikeBloom: 0.0, // Peak Drop: detached tips that hold then fall (0-1.0, 0% = off). Key kept as spikeBloom for preset/macro compatibility.
+  spikeVariety: 0.35, // Spike Variety: per-spike height variation (0-1.0, 0% = legacy uniform envelope)
   transientBoost: 0.0, // 🔥 Transient emphasis for punchy reactivity (0-1.0, 0% = default)
   // LIQUID SHAPER - WebGL Sacred Geometry Engine
   astralShaper: false, // Enable/disable Liquid Shaper

@@ -309,6 +309,7 @@ export function registerVisualizerControlPlane(options: VisualizerControlPlaneOp
     bindThrottled("#spikeAttack", el => params.spikeAttack = parseFloat(el.value));
     bindThrottled("#spikeTightness", el => params.spikeTightness = parseFloat(el.value));
     bindThrottled("#spikeBloom", el => params.spikeBloom = parseFloat(el.value));
+    bindThrottled("#spikeVariety", el => params.spikeVariety = parseFloat(el.value));
     bindThrottled("#transientBoost", el => params.transientBoost = parseFloat(el.value));
     bind("#bassReduce", el => params.bassReduce = parseFloat(el.value));
     bind("#frequencyMix", el => params.frequencyMix = parseFloat(el.value));

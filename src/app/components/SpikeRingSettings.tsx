@@ -1,6 +1,7 @@
-import { memo, useEffect, type ReactNode } from 'react';
+import { memo, useEffect, useState, type ReactNode } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { spikeFftExponentToVisibleCount } from '../config/parameterConversions';
+import { defaultParams } from '../config/defaultParams';
 
 interface SpikeRingSettingsProps {
   collapsed: boolean;
@@ -37,6 +38,18 @@ function SpikeRingSettings({
   setTransientBoostVal,
   children
 }: SpikeRingSettingsProps) {
+  // Spike Variety is owned locally (value flows to the runtime via the
+  // #spikeVariety control-plane binding). A native listener keeps the readout
+  // in sync when defaults/reset set the slider programmatically.
+  const [spikeVarietyVal, setSpikeVarietyVal] = useState<number>(defaultParams.spikeVariety);
+  useEffect(() => {
+    const el = document.getElementById('spikeVariety') as HTMLInputElement | null;
+    if (!el) return;
+    const sync = () => setSpikeVarietyVal(parseFloat(el.value) || 0);
+    el.addEventListener('input', sync);
+    return () => el.removeEventListener('input', sync);
+  }, []);
+
   useEffect(() => {
     const syncVisibleSpikeCount = (event?: Event) => {
       const detail = (event as CustomEvent<{ exponent?: unknown }> | undefined)?.detail;
@@ -139,8 +152,21 @@ function SpikeRingSettings({
           />
           <span className="slider-value" style={{ fontSize: '10px', color: 'var(--neonBlue)', fontWeight: '700' }}>{spikeAttackVal.toFixed(2)}</span>
         </div>
-        <div className="row control" title="Controls outer glow/aura intensity - 0% = sharp clean bars, 50% = soft energy aura, 100% = intense bloom (cyberpunk!)">
-          <span className="label">Spike Bloom</span>
+        <div className="row control" title="Adds height variation between neighboring spikes - 0% = smooth envelope, 100% = strongly varied bars. Keeps mirror symmetry.">
+          <span className="label">Spike Variety</span>
+          <input 
+            id="spikeVariety" 
+            type="range" 
+            min="0" 
+            max="1.0" 
+            step="0.01" 
+            defaultValue={String(defaultParams.spikeVariety)} 
+            onChange={(e) => setSpikeVarietyVal(parseFloat(e.target.value))}
+          />
+          <span className="slider-value" style={{ fontSize: '10px', color: 'var(--neonBlue)', fontWeight: '700' }}>{(spikeVarietyVal * 100).toFixed(0)}%</span>
+        </div>
+        <div className="row control" title="Spike tips break off at peaks, hold briefly, then fall back - 0% = off, higher = longer hold and slower fall">
+          <span className="label">Peak Drop</span>
           <input 
             id="spikeBloom" 
             type="range" 
