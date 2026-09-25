@@ -252,7 +252,7 @@ export function createVisualizerProductionFrameController(
     }, energy);
 
     let lastT = performance.now(), angle = 0, frameCount = 0, fpsTimer = 0;
-    const runtimeClock = new RuntimeClock(1 / 45);
+    const runtimeClock = new RuntimeClock();
     runtimeClock.start(lastT);
     let latestBpmBarPhase = 0;
     const presetTransitionEngine = new PresetTransitionEngine(0.24);

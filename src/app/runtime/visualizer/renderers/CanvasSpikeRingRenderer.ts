@@ -167,7 +167,13 @@ export function renderCanvasSpikeRing(frame: CanvasSpikeRingFrame): void {
   let peakDt = peakLastTime < 0 ? 0 : (spikeTimeAcc - peakLastTime) / 1.5;
   if (!(peakDt > 0) || peakDt > 0.05) peakDt = peakDt > 0.05 ? 0.05 : 0;
   peakLastTime = spikeTimeAcc;
-  const tightness = Number(params.spikeTightness) || 1;
+  // Sprint D: Thickness (spike length) remap. The height-shaping fix draws quiet
+  // bins at 35-100% of full length, which made the same slider % read thinner.
+  // Gain tapers from 1.5x at the bottom of the slider (0.2) to 1.0x at the top
+  // (1.5), so low/mid settings draw fuller while the maximum reach is unchanged.
+  const rawTightness = Number(params.spikeTightness) || 1;
+  const tightnessT = Math.max(0, Math.min(1, (rawTightness - 0.2) / 1.3));
+  const tightness = rawTightness * (1.5 - 0.5 * tightnessT);
   const peakRefMax = maxAmp * ampScale * tightness;
   const peakHoldTime = 0.06 + peakDrop * 0.3;
   const peakGravity = maxAmp * (22 - peakDrop * 16);

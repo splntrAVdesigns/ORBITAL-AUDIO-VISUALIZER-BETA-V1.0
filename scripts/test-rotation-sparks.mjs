@@ -13,6 +13,7 @@ try {
     'src/app/utils/rotationAuthority.ts',
     'src/app/utils/easing.ts',
     'src/app/utils/mathHelpers.ts',
+    'src/app/utils/runtimeClock.ts',
     'src/app/runtime/visualizer/renderers/SparkCometRuntime.ts',
     'src/app/runtime/visualizer/renderers/CenterEmitterGeometry.ts',
     'src/app/runtime/visualizer/renderers/SparkCometSpriteAtlas.ts',
@@ -40,13 +41,14 @@ try {
     }
   };
 
-  for (const file of ['rotationSyncEngine.js', 'rotationAuthority.js', 'easing.js', 'mathHelpers.js', 'RuntimeAudioSoakMonitor.js', 'SparkCometRuntime.js', 'CenterEmitterGeometry.js']) {
+  for (const file of ['rotationSyncEngine.js', 'rotationAuthority.js', 'easing.js', 'mathHelpers.js', 'runtimeClock.js', 'RuntimeAudioSoakMonitor.js', 'SparkCometRuntime.js', 'CenterEmitterGeometry.js']) {
     const resolved = find(file);
     if (!resolved) continue;
     let code = fs.readFileSync(resolved, 'utf8');
     code = code
       .replace(/from '\.\/easing'/g, "from './easing.js'")
       .replace(/from '\.\/mathHelpers'/g, "from './mathHelpers.js'")
+      .replace(/from '\.\/runtimeClock'/g, "from './runtimeClock.js'")
       .replace(/from '\.\/rotationSyncEngine'/g, "from './rotationSyncEngine.js'")
       .replace(/from '\.\.\/visualizer\/session\/RuntimeResourceDiagnostics'/g, "from '../visualizer/session/RuntimeResourceDiagnostics.js'")
       .replace(/from '\.\.\/visualizer\/renderers\/SparkCometRuntime'/g, "from '../visualizer/renderers/SparkCometRuntime.js'")

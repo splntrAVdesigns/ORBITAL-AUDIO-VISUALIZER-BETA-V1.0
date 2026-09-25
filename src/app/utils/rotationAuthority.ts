@@ -1,4 +1,5 @@
 import { damp, wrapAngle, shortestAngleDiff, TAU } from './mathHelpers';
+import { normalizeMotionDelta } from './runtimeClock';
 import { createAngleTween, startAngleTween, updateAngleTween, easeOutSine, easeInOutCubic } from './easing';
 import {
   advanceOscillatorRotation,
@@ -68,7 +69,7 @@ export class RotationAuthority {
   private quantizedInterval = 1;
 
   private advanceDeterministic(speed: number, dt: number) {
-    const safeDt = Math.min(Math.max(dt, 0), 1 / 30);
+    const safeDt = normalizeMotionDelta(dt);
     const rawStep = speed * safeDt;
     const step = Math.max(-Math.PI / 12, Math.min(Math.PI / 12, rawStep));
     this.absolutePhase += step;
@@ -145,7 +146,7 @@ export class RotationAuthority {
   }
 
   private updateQuantized(params: RotationAuthorityParams, dt: number, bpm: number, division: string): number {
-    const safeDt = Math.min(Math.max(dt, 0), 1 / 30);
+    const safeDt = normalizeMotionDelta(dt);
     const direction = getSignedRotationDirection(params.rotation);
     const nextInterval = Math.max(0.016, getSecondsPerDivision(bpm, division));
     const divisionChanged = division !== this.lastDivision;
@@ -227,11 +228,11 @@ export class RotationAuthority {
         this.pingPong.direction = sign;
         this.lastPingPongSign = sign;
       }
-      this.angle = advancePingPongRotation({ state: this.pingPong, dt: Math.min(Math.max(dt, 0), 1 / 30), bpm, division });
+      this.angle = advancePingPongRotation({ state: this.pingPong, dt: normalizeMotionDelta(dt), bpm, division });
       this.currentAngle = this.angle;
       this.absolutePhase = this.angle;
     } else if (mode === 'oscillator') {
-      this.angle = advanceOscillatorRotation({ state: this.oscillator, dt: Math.min(Math.max(dt, 0), 1 / 30), bpm, division });
+      this.angle = advanceOscillatorRotation({ state: this.oscillator, dt: normalizeMotionDelta(dt), bpm, division });
       this.currentAngle = this.angle;
       this.absolutePhase = this.angle;
     } else {
@@ -241,7 +242,9 @@ export class RotationAuthority {
         this.freeVelocity = 0;
       } else {
         if (Math.abs(targetVelocity) >= 0.001) this.homeTween.active = false;
-        const cappedDt = Math.min(Math.max(dt, 0), 1 / 50);
+        // Sprint D: was capped at 20 ms, which dropped time on every frame over
+        // 20 ms and made free rotation speed wobble under load.
+        const cappedDt = normalizeMotionDelta(dt);
         this.freeVelocity = damp(this.freeVelocity, targetVelocity, 8.5, cappedDt);
         this.absolutePhase += this.freeVelocity * cappedDt;
         this.angle = wrapAngle(this.absolutePhase);

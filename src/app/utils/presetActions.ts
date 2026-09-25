@@ -750,12 +750,17 @@ export function createPresetActions(ctx: PresetActionsContext) {
         const chance = (p: number) => Math.random() < p;
         const pick = <T,>(items: readonly T[]): T => items[Math.floor(Math.random() * items.length)];
 
-        const motionTypes = [
+        // Sprint D: glitch-style looks stay available but are rolled rarely, so the
+        // dice favours clean, musical results instead of chaos on most rolls.
+        const calmMotionTypes = [
           'none', 'slowDrift', 'verticalFloat', 'horizontalFloat', 'orbitDrift',
-          'breathingZoom', 'kenBurnsDrift', 'tickerScroll', 'fallTicker',
-          'signalLock', 'glitchSnap', 'pulseBurst', 'digitalSkip'
+          'breathingZoom', 'kenBurnsDrift', 'tickerScroll', 'fallTicker', 'pulseBurst',
         ];
-        const transitionTypes = ['fade', 'crossfade', 'zoom', 'flashZoom', 'pushFade', 'signalScan', 'glitchCut'];
+        const glitchMotionTypes = ['signalLock', 'glitchSnap', 'digitalSkip'];
+        const calmTransitionTypes = ['fade', 'crossfade', 'zoom', 'flashZoom', 'pushFade', 'signalScan'];
+        // Chaos: ~70% none, ~20% subtle, ~10% strong.
+        const chaosRoll = Math.random();
+        const rolledChaos = chaosRoll < 0.70 ? 0 : chaosRoll < 0.90 ? rand(0.06, 0.20) : rand(0.35, 0.65);
         const colorGrades = ['none', 'monoBlue', 'highContrastTech', 'cyberpunk', 'warmSunset', 'neonDreams'];
         const shaderIds = ['digital-matrix', 'liquid-gradient', 'geometric-pattern', 'particle-cube-field'];
         const useCoreTexture = chance(0.22);
@@ -767,8 +772,7 @@ export function createPresetActions(ctx: PresetActionsContext) {
           mirror: chance(0.18) ? rand(0.08, 0.35) : 0,
           gamma: rand(0, 0.65),
           iridize: rand(0, 0.75),
-          // Keep chaos mostly controlled; glitch-oriented random rolls can still spike.
-          chaos: chance(0.16) ? rand(0.38, 0.72) : rand(0, 0.14),
+          chaos: rolledChaos,
           hueSpeed: rand(0.08, 1.15),
           halo: rand(0.25, 1.18),
           bloom: rand(0.10, 0.82),
@@ -826,7 +830,7 @@ export function createPresetActions(ctx: PresetActionsContext) {
 
           beatDetect: chance(0.18),
           beatSensitivity: rand(0.55, 0.75),
-          beatPulseType: pick(['flash', 'color', 'rainbow', 'spark', 'dark-strobe', 'all']),
+          beatPulseType: chance(0.08) ? 'dark-strobe' : pick(['flash', 'color', 'rainbow', 'spark', 'all']),
           beatAccent: rand(1.0, 1.35),
           effectAmount: rand(0.24, 0.58),
           darkStrobeDepth: rand(0.48, 0.84),
@@ -843,13 +847,13 @@ export function createPresetActions(ctx: PresetActionsContext) {
           centerImageSaturation: rand(0.82, 1.24),
           centerImageHueShift: rand(0, 0.35),
           centerImageHueShiftAuto: chance(0.12),
-          centerImageDisplacement: chance(0.22) ? rand(2, 12) : 0,
-          centerImageMotionType: pick(motionTypes),
+          centerImageDisplacement: chance(0.10) ? rand(2, 10) : 0,
+          centerImageMotionType: chance(0.12) ? pick(glitchMotionTypes) : pick(calmMotionTypes),
           centerImageMotionAmount: rand(0.24, 0.72),
           centerImageMotionIntensity: rand(0.18, 0.58),
           centerImageXDrift: false,
           centerImageYDrift: false,
-          centerImageTransitionType: pick(transitionTypes),
+          centerImageTransitionType: chance(0.08) ? 'glitchCut' : pick(calmTransitionTypes),
           centerImageAutoCycle: chance(0.18),
           centerImageCycleSpeed: pick(['4000', '6000', '8000']),
 

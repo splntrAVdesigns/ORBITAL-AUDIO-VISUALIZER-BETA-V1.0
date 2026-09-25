@@ -210,8 +210,11 @@ html,body{
   position: fixed;
   inset: 0;
   background: #000000;
-  border: 1px solid var(--neonBlue); /* RESTORED: Blue border */
-  box-shadow: 0 0 12px rgba(30,144,255,0.4); /* RESTORED: Blue glow */
+  /* Sprint D: frameless shell. The blue border/glow and 8px inset were removed so
+     the panel and canvas run edge to edge, and fullscreen no longer triggers an
+     extra inset/border layout change on top of the window resize. */
+  border: 0;
+  box-shadow: none;
   isolation: isolate;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -220,7 +223,7 @@ html,body{
 }
 #frame-border-outer {
   position: absolute;
-  inset: 8px; /* RESTORED: 8px spacing */
+  inset: 0; /* Sprint D: frameless shell (was 8px) */
   background: #000000;
   isolation: isolate;
 }
@@ -228,7 +231,7 @@ html,body{
   position: relative;
   width: 100%;
   height: 100%;
-  border: 1px solid #2a3844; /* RESTORED: Inner border */
+  border: 0; /* Sprint D: frameless shell (was 1px #2a3844) */
   background: #000000;
   overflow: hidden;
   isolation: isolate;
@@ -266,7 +269,7 @@ html:-webkit-full-screen #frame-border-inner {
   height: 100%; 
   overflow-x: hidden; 
   overflow-y: hidden;
-  background: linear-gradient(180deg, rgba(40,44,52,.98), rgba(35,38,45,.98));
+  background: #1d1e1f; /* Sprint D: darker panel tone (was rgba(40,44,52) gradient) */
   border-right: 1px solid #3a4450; 
   padding: 10px; 
   box-shadow: 4px 0 12px rgba(0,0,0,.26);
@@ -287,10 +290,19 @@ html:-webkit-full-screen #frame-border-inner {
   position: sticky;
   top: 0;
   z-index: 10;
-  background: linear-gradient(180deg, rgba(40,44,52,.98), rgba(35,38,45,.98));
+  background: #1d1e1f; /* Sprint D: darker panel tone (was rgba(40,44,52) gradient) */
   padding-bottom: 10px;
   overflow: visible;
 }
+/* Sprint D: dark scrollbar for the parameter list (was the OS default, white on macOS). */
+.panel-scrollable {
+  scrollbar-width: thin;
+  scrollbar-color: #3e4652 #1d1e1f;
+}
+.panel-scrollable::-webkit-scrollbar { width: 8px; }
+.panel-scrollable::-webkit-scrollbar-track { background: #1d1e1f; }
+.panel-scrollable::-webkit-scrollbar-thumb { background: #3e4652; border-radius: 4px; border: 2px solid #1d1e1f; }
+.panel-scrollable::-webkit-scrollbar-thumb:hover { background: #4f5a68; }
 .panel-scrollable {
   flex: 1;
   overflow-y: auto;

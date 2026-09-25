@@ -1,3 +1,4 @@
+import { normalizeMotionDelta } from '../../../utils/runtimeClock';
 export interface SchedulerMotionPhaseFrame {
   deltaSeconds: number;
   timeSeconds: number;
@@ -12,9 +13,9 @@ export class SchedulerMotionPhaseRuntime {
   };
 
   advance(deltaSeconds: number): Readonly<SchedulerMotionPhaseFrame> {
-    const safeDelta = Number.isFinite(deltaSeconds)
-      ? Math.max(0, Math.min(1 / 45, deltaSeconds))
-      : 0;
+    // Sprint D: shared two-tier timing (real time for normal frames, one
+    // nominal frame for stalls) instead of a flat 22 ms cap.
+    const safeDelta = normalizeMotionDelta(deltaSeconds);
     this.timeSeconds += safeDelta;
     this.frame.deltaSeconds = safeDelta;
     this.frame.timeSeconds = this.timeSeconds;

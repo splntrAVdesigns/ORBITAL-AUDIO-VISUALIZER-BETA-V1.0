@@ -1,3 +1,5 @@
+import { normalizeMotionDelta } from '../../../utils/runtimeClock';
+
 const TAU = Math.PI * 2;
 
 /**
@@ -9,9 +11,7 @@ export class HaloCometOrbitRuntime {
 
   update(enabled: boolean, speedValue: number, directionValue: number, deltaSeconds: number): number {
     if (!enabled) return this.phase;
-    const elapsedSeconds = Number.isFinite(deltaSeconds)
-      ? Math.max(0, Math.min(1 / 45, deltaSeconds))
-      : 0;
+    const elapsedSeconds = normalizeMotionDelta(deltaSeconds);
     const speed = Math.max(0, Math.min(1.5, Number(speedValue) || 0));
     const direction = Number(directionValue) < 0 ? -1 : 1;
     this.phase = (this.phase + direction * speed * TAU * elapsedSeconds) % TAU;
