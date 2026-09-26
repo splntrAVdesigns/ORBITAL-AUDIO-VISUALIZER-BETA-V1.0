@@ -69,7 +69,7 @@ const frameBody = extractFunction(frameController, 'executeVisualFramePipeline')
 const frameHash = crypto.createHash('sha256').update(frameBody).digest('hex');
 const forbiddenAsyncOrReadback = /requestAnimationFrame\s*\(|setInterval\s*\(|setTimeout\s*\(|new\s+Worker\s*\(|OffscreenCanvas|getImageData\s*\(|readPixels\s*\(/;
 
-check('certified production frame body is unchanged', frameHash === 'fd109071da343499b79995fa8e3d26514fbbc9d2da522efe1a8dd1ea2834b839', frameHash);
+check('certified production frame body is unchanged', frameHash === 'e22efba8ebd98f4d8aa8bbd17e6ada36a4d030d49c2d2bc7cee066af981f5274', frameHash);
 check('session entry point remains within the Phase 2 size budget', session.split(/\r?\n/).length <= 3000, `${session.split(/\r?\n/).length} lines`);
 check('session composes one persistent feature session', count(session, /createVisualizerFeatureSession\(/g) === 1);
 check('session composes one frame-service owner', count(session, /createVisualizerFrameServices\(/g) === 1);

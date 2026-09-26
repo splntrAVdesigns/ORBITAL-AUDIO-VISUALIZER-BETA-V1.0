@@ -12,11 +12,11 @@
     "packageManager": "npm@10.9.4"
   },
   "production": {
-    "frameBodySha256": "fd109071da343499b79995fa8e3d26514fbbc9d2da522efe1a8dd1ea2834b839",
+    "frameBodySha256": "e22efba8ebd98f4d8aa8bbd17e6ada36a4d030d49c2d2bc7cee066af981f5274",
     "mainThreadFallbackFileCount": 67,
-    "mainThreadFallbackSha256": "a96e7a6032ee5e151a8078db50309e0827ce5a78564a3c3b66af779f4a5fdd7c",
-    "coreParticleFallbackLineCount": 454,
-    "coreParticleFallbackSha256": "79f19316ce38fc7cb4bdc0d9f2de957703bd1566d07dd1fc8c1b90068a436ce1"
+    "mainThreadFallbackSha256": "29ca42df945f4cc0689a5030272972db92c99045a10466f904874fd9d7f8d443",
+    "coreParticleFallbackLineCount": 456,
+    "coreParticleFallbackSha256": "806056b3a6ec805664e0fe051c86f8a19475496bca07798850666792b52a43ce"
   },
   "files": {
     "package.json": "0301fc6475f3a8b111791787bec6af52119ffea7677d839afd5c79e73f6100a7",

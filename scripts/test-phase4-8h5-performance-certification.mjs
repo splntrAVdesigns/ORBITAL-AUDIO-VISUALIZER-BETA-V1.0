@@ -33,7 +33,7 @@ const checks = [];
 const check = (name, ok, detail='') => checks.push({ name, ok: Boolean(ok), detail });
 const frameBody = extractFunction(frameController, 'executeVisualFramePipeline');
 const frameHash = crypto.createHash('sha256').update(frameBody).digest('hex');
-const frozenHash = 'fd109071da343499b79995fa8e3d26514fbbc9d2da522efe1a8dd1ea2834b839';
+const frozenHash = 'e22efba8ebd98f4d8aa8bbd17e6ada36a4d030d49c2d2bc7cee066af981f5274';
 
 check('H5 certification follows approved Phase 2 production frame revision', frameHash === frozenHash, frameHash);
 check('frame controller imports performance certification runtime', frameController.includes("from '../diagnostics/ProductionPerformanceCertification'"));

@@ -1960,8 +1960,10 @@ if (
             // Base field should already have some room at 0
             const baseAreaSize = R0 * 0.12;
 
-            // Max spread should be about 3x the base size, but still stay inside the inner core ring
-            const maxAreaSize = baseAreaSize * 3.0;
+            // Sprint F: was 3.0x, which reached out far enough to bleed into the spike
+            // ring layer at full Spread. Trimmed 25% so particles stay confined to the
+            // core area (same 0.92 curve/base size, just a lower ceiling).
+            const maxAreaSize = baseAreaSize * 2.25;
 
             // Pulse should not radically alter spread
             const pulseSpreadBoost = 1.0 + coreParticleFeature.pulseValue * 0.06;

@@ -175,7 +175,9 @@ export function renderCanvasSpikeRing(frame: CanvasSpikeRingFrame): void {
   // across the whole range instead of tapering back to no boost at the max.
   const rawTightness = Number(params.spikeTightness) || 1;
   const tightnessT = Math.max(0, Math.min(1, (rawTightness - 0.2) / 1.3));
-  const tightness = rawTightness * (2.2 - 0.65 * tightnessT);
+  // Sprint F: ceiling trimmed 25% (2.2/1.55 -> 1.65/1.1625). Same curve shape/balance
+  // across the slider, just scaled down uniformly so max Thickness reads less extreme.
+  const tightness = rawTightness * (1.65 - 0.4875 * tightnessT);
   const peakRefMax = maxAmp * ampScale * tightness;
   const peakHoldTime = 0.06 + peakDrop * 0.3;
   const peakGravity = maxAmp * (22 - peakDrop * 16);
