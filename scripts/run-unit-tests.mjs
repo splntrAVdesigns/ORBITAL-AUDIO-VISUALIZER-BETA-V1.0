@@ -20,6 +20,7 @@ const requiredTests = Object.freeze([
   'core-textures-performance-isolation.contract.test.mjs',
   'cosmic-orb-core-texture.contract.test.mjs',
   'chromatic-waves-and-led-static.contract.test.mjs',
+  'preset-parameter-ownership.unit.test.mjs',
 ]);
 
 const missing = requiredTests.filter(file => !fs.existsSync(path.join(testDirectory, file)));

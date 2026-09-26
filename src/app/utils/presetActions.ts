@@ -17,6 +17,7 @@ import { palettes, type ColorPalette } from '../data/colorPalettes';
 import { presets } from '../data/presets';
 import { defaultParams } from '../config/defaultParams';
 import { normalizeBeatPulseType, AVAILABLE_BEAT_PULSE_TYPES } from '../config/beatPulseTypes';
+import { GENERIC_PRESET_PARAMETERS, readOwnedControl, writeOwnedControl } from '../config/presetParameterOwnership';
 import {
   normalizeDotDensityForSlider,
   normalizeSpikeFftExponent,
@@ -387,6 +388,17 @@ export function createPresetActions(ctx: PresetActionsContext) {
         if (ctx.getAutoCycleEnabled() !== shouldCycle) ctx.toggleAutoCycle();
       }
 
+      // Sprint K1: preset-owned parameters synced generically (see
+      // config/presetParameterOwnership.ts). A preset that omits one of these now
+      // gets the default instead of inheriting the previous preset's value.
+      for (const entry of GENERIC_PRESET_PARAMETERS) {
+        if (!entry.load) continue;
+        const el = document.getElementById(entry.key) as HTMLInputElement | HTMLSelectElement | null;
+        if (!el) continue;
+        writeOwnedControl(el, entry.kind, (preset as any)[entry.key] ?? (defaultParams as any)[entry.key]);
+        dispatchControlEvent(el);
+      }
+
       // Core Textures / shader layer presets. These controls are React-driven, so update
       // params + engine + shared UI globals directly instead of forcing App.tsx bloat.
       const corePresetEnabled = Boolean((preset as any).coreTexturesEnabled ?? false);
@@ -574,7 +586,7 @@ export function createPresetActions(ctx: PresetActionsContext) {
         return el ? el.value : '';
       };
       
-      return {
+      const settings: Record<string, unknown> = {
         rotation: getSlider("#rot"),
         mirror: getSlider("#mirror"),
         gamma: getSlider("#gamma"),
@@ -709,6 +721,16 @@ export function createPresetActions(ctx: PresetActionsContext) {
         coreTexturesDensity: Number((params as any).coreTexturesDensity ?? 0.45),
         coreTexturesGlowIntensity: Number((params as any).coreTexturesGlowIntensity ?? 0.5)
       };
+
+      // Sprint K1: preset-owned parameters synced generically (see
+      // config/presetParameterOwnership.ts). Closes the save gaps, including
+      // Halo Strobe / Halo Comet / Motion Blur, which were never saved.
+      for (const entry of GENERIC_PRESET_PARAMETERS) {
+        if (!entry.save) continue;
+        const el = document.getElementById(entry.key) as HTMLInputElement | HTMLSelectElement | null;
+        if (el) settings[entry.key] = readOwnedControl(el, entry.kind, (defaultParams as any)[entry.key]);
+      }
+      return settings;
     }
     
     // Save button handler
