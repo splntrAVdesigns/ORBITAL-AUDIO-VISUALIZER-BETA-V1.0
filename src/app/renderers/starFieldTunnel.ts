@@ -212,8 +212,12 @@ export class StarFieldTunnel {
     const speedMul = 1 + this.smoothBass * 1.4 + this.smoothBeat * 0.35;
     const stepZ = Math.max(0, p.starFieldSpeed) * 0.0008 * speedMul;
     const turbulence = (Math.max(0, p.starFieldTurbulence) + this.smoothMid * 3) * 0.2;
-    const starScale = Math.max(0, p.starFieldSize) * 0.15 * (1 + this.smoothBeat * 0.25);
-    const brightness = clamp01(frame.intensity) * (0.85 + this.smoothBeat * 0.3);
+    // Sprint J: size 0 no longer collapses to sub-pixel. Base offset keeps the
+    // smallest setting visible after the buffer is upscaled to display size.
+    const starScale = (0.45 + Math.max(0, p.starFieldSize) * 0.14) * (1 + this.smoothBeat * 0.25);
+    // Sprint J: brighter overall. 50% Effect Amount now ~0.78 alpha scale (was ~0.43),
+    // 65% ~0.92, full ~1.2 (clamped per star), plus the beat pulse on top.
+    const brightness = (0.3 + clamp01(frame.intensity) * 0.9) * (1 + this.smoothBeat * 0.3);
     const trail = clamp01(p.starFieldTrail / 100);
     const reverse = Boolean(p.starFieldReverse);
 
@@ -242,7 +246,10 @@ export class StarFieldTunnel {
     const cx = w / 2, cy = h / 2;
     const projScale = Math.min(w, h) * 0.9;
     const maxR = 1 + starScale * 2.5;
-    const flashBoost = 1 + 2.5 * glitter;
+    // Sprint J: glitter was capped by maxR, which normal stars already reach, so
+    // flashes had no headroom. The flash cap now grows with the Glitter slider.
+    const flashBoost = 1.6 + 3.2 * glitter;
+    const maxFlashR = maxR * (1.4 + glitter * 2.2);
 
     for (let i = 0; i < count; i++) {
       const vz = stepZ * this.vmul[i] * dt;
@@ -277,30 +284,30 @@ export class StarFieldTunnel {
       let flashMult = 1;
       if (glitter > 0) {
         if (p.starFieldBeatSync) {
-          if (beatEdge && Math.random() < 0.18 * Math.min(1, glitter * 1.5)) {
-            this.flashUntil[i] = this.elapsed + 0.05 + Math.random() * 0.07;
+          if (beatEdge && Math.random() < 0.08 + 0.42 * Math.min(1, glitter)) {
+            this.flashUntil[i] = this.elapsed + 0.10 + Math.random() * 0.14;
           }
         } else if (this.elapsed >= this.nextFlash[i] && this.flashUntil[i] < this.elapsed) {
-          this.flashUntil[i] = this.elapsed + 0.04 + Math.random() * 0.07;
-          this.nextFlash[i] = this.elapsed + 1 + Math.random() * 4 * (1 / Math.max(0.0001, glitter));
+          this.flashUntil[i] = this.elapsed + 0.08 + Math.random() * 0.12;
+          this.nextFlash[i] = this.elapsed + 0.6 + Math.random() * 2.5 * (1 / Math.max(0.0001, glitter));
         }
         if (this.elapsed <= this.flashUntil[i]) flashMult = flashBoost;
       }
 
       const sizePersp = Math.min(2.5, persp * 0.6);
-      const baseR = Math.max(0.25, starScale * (0.4 + sizePersp));
-      const r = Math.min(baseR * flashMult, maxR);
+      const baseR = Math.max(0.9, starScale * (0.4 + sizePersp));
+      const r = flashMult > 1 ? Math.min(baseR * flashMult, maxFlashR) : Math.min(baseR, maxR);
 
       const lifeT = reverse ? zi : 1 - zi;
       const fadeIn = reverse ? Math.min(1, (zi - focal) / (1 - focal) / 0.12) : 1;
-      const alpha = Math.min(1, reverse ? 0.85 - lifeT * 0.6 : lifeT * 0.9 + 0.05)
-        * fadeIn * brightness * (flashMult > 1 ? 1 : 0.85);
+      const alpha = Math.min(1, Math.min(1, reverse ? 0.85 - lifeT * 0.6 : lifeT * 0.9 + 0.05)
+        * fadeIn * brightness * (flashMult > 1 ? 1.15 : 0.9));
       if (alpha <= 0.004) { this.px[i] = sx; this.py[i] = sy; continue; }
 
       const col = this.colorStrs[this.colorIdx[i]];
       const ppx = this.px[i], ppy = this.py[i];
       if (ppx === ppx && ppy === ppy) { // not NaN
-        b.globalAlpha = alpha * 0.5;
+        b.globalAlpha = Math.min(1, alpha * 0.62);
         b.strokeStyle = col;
         b.lineWidth = Math.max(0.4, r * 0.4);
         b.beginPath();
@@ -314,9 +321,23 @@ export class StarFieldTunnel {
       b.fillRect(sx - r, sy - r, r * 2, r * 2);
 
       if (flashMult > 1) {
-        const rf = Math.min(r * 1.4, maxR * 1.4);
-        b.globalAlpha = alpha * 0.5;
+        // Sprint J: glitter reads as a sparkle -- soft halo, white-hot core and
+        // a 4-point cross. Only the few stars flashing this frame pay for it.
+        const rf = r * 1.6;
+        b.globalAlpha = Math.min(1, alpha * 0.45);
         b.fillRect(sx - rf, sy - rf, rf * 2, rf * 2);
+        b.fillStyle = this.colorStrs[2];
+        b.globalAlpha = Math.min(1, alpha);
+        const rc = Math.max(0.8, r * 0.55);
+        b.fillRect(sx - rc, sy - rc, rc * 2, rc * 2);
+        const arm = r * (2.2 + glitter * 2.5);
+        b.strokeStyle = this.colorStrs[2];
+        b.lineWidth = Math.max(0.6, r * 0.22);
+        b.globalAlpha = Math.min(1, alpha * 0.8);
+        b.beginPath();
+        b.moveTo(sx - arm, sy); b.lineTo(sx + arm, sy);
+        b.moveTo(sx, sy - arm); b.lineTo(sx, sy + arm);
+        b.stroke();
       }
 
       this.px[i] = sx;

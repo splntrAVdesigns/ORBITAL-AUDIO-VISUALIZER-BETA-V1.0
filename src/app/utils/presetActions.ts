@@ -16,7 +16,7 @@
 import { palettes, type ColorPalette } from '../data/colorPalettes';
 import { presets } from '../data/presets';
 import { defaultParams } from '../config/defaultParams';
-import { normalizeBeatPulseType } from '../config/beatPulseTypes';
+import { normalizeBeatPulseType, AVAILABLE_BEAT_PULSE_TYPES } from '../config/beatPulseTypes';
 import {
   normalizeDotDensityForSlider,
   normalizeSpikeFftExponent,
@@ -858,7 +858,7 @@ export function createPresetActions(ctx: PresetActionsContext) {
 
           beatDetect: chance(0.18),
           beatSensitivity: rand(0.55, 0.75),
-          beatPulseType: chance(0.08) ? 'dark-strobe' : pick(['flash', 'color', 'rainbow', 'spark']),
+          beatPulseType: chance(0.08) ? 'dark-strobe' : pick(['flash', 'color', 'rainbow', 'spark'].filter((t) => (AVAILABLE_BEAT_PULSE_TYPES as readonly string[]).includes(t))),
           beatAccent: rand(1.0, 1.35),
           effectAmount: rand(0.24, 0.58),
           darkStrobeDepth: rand(0.48, 0.84),

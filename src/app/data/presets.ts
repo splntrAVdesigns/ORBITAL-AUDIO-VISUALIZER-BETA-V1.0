@@ -450,7 +450,8 @@ export const presets: Preset[] = [
       hueSpeed: 0.25, zoomOsc: 0.015, fftSize: 10, reactivity: 0.64,
       frequencySmoothing: true, autoRotateSpeed: 1, palette: 2,
       spikeAttack: 0.48, spikeTightness: 0.66, spikeBloom: 0.50, spikeVariety: 0.60, transientBoost: 0.26,
-      beatDetect: true, beatSensitivity: 0.66, beatPulseType: 'spark', beatAccent: 1.20, effectAmount: 0.44, frequencyBand: 'full',
+      beatDetect: true, beatSensitivity: 0.66, beatPulseType: 'flash', // was 'spark' -- restore when SPARK_IMPACT_ENABLED returns
+       beatAccent: 1.20, effectAmount: 0.44, frequencyBand: 'full',
       astralShaper: false, shapeOscillate: false,
       ...cleanCenter,
       centerImageMotionType: 'cinematicPush', centerImageMotionAmount: 0.48, centerImageMotionIntensity: 0.34,

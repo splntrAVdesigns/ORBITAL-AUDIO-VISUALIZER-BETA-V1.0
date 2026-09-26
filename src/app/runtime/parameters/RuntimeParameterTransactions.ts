@@ -1,4 +1,5 @@
 import { defaultParams, type VisualizerParams } from '../../config/defaultParams';
+import { AVAILABLE_BEAT_PULSE_TYPES } from '../../config/beatPulseTypes';
 
 type Widen<T> = T extends number ? number : T extends boolean ? boolean : T extends string ? string : T;
 
@@ -170,7 +171,7 @@ const numericConstraints: Partial<Record<RuntimeParameterKey, NumericConstraint>
 
 const enumValues: Partial<Record<RuntimeParameterKey, readonly string[]>> = {
   reactivityMode: ['instant', 'smooth', 'hybrid', 'manual'],
-  beatPulseType: ['flash', 'color', 'rainbow', 'spark', 'dark-strobe', 'starfield'],
+  beatPulseType: [...AVAILABLE_BEAT_PULSE_TYPES],
   starFieldBlendMode: ['screen', 'lighter', 'source-over'],
   coreParticlesShapeMode: ['dot', 'tri', 'dia', 'all'],
   centerImageColorGrade: [

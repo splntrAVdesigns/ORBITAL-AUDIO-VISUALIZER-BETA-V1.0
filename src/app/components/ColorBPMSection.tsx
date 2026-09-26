@@ -1,7 +1,8 @@
 // ORBITAL - Color + BPM Adapt Section Component
 // Extracted from App.tsx as part of PHASE 2 refactoring
 
-import { memo } from 'react';
+import { memo, useEffect } from 'react';
+import { SPARK_IMPACT_ENABLED } from '../config/beatPulseTypes';
 import { ChevronDown, Star } from 'lucide-react';
 import { TapTempoControl } from './TapTempoControl';
 
@@ -11,6 +12,25 @@ interface ColorBPMSectionProps {
 }
 
 function ColorBPMSection({ collapsed, onToggleCollapse }: ColorBPMSectionProps) {
+  // Sprint J: Star Field Tunnel reads best at >= 65% Effect Amount. When the
+  // user (a trusted, real interaction -- never a preset load or reset, which
+  // dispatch synthetic events) switches Effect Type to Star Field, raise Effect
+  // Amount to 65% if it's lower. Never lowers a value the user set higher.
+  useEffect(() => {
+    const select = document.getElementById('beatPulseType') as HTMLSelectElement | null;
+    if (!select) return;
+    const STAR_FIELD_MIN_AMOUNT = 0.65;
+    const onUserChange = (event: Event) => {
+      if (!event.isTrusted || select.value !== 'starfield') return;
+      const amount = document.getElementById('effectAmount') as HTMLInputElement | null;
+      if (!amount || parseFloat(amount.value) >= STAR_FIELD_MIN_AMOUNT) return;
+      amount.value = String(STAR_FIELD_MIN_AMOUNT);
+      amount.dispatchEvent(new Event('input', { bubbles: true }));
+    };
+    select.addEventListener('change', onUserChange);
+    return () => select.removeEventListener('change', onUserChange);
+  }, []);
+
   return (
     <div className="section" style={{ background: '#1a1d23', border: '1px solid rgba(30,144,255,0.3)' }}>
       <div 
@@ -212,7 +232,8 @@ function ColorBPMSection({ collapsed, onToggleCollapse }: ColorBPMSectionProps) 
                 <option value="flash">Saturation Burst</option>
                 <option value="color">Color Wave</option>
                 <option value="rainbow">Rainbow Canvas</option>
-                <option value="spark">Spark Impact</option>
+                {/* Spark Impact gated off for now (config/beatPulseTypes.ts SPARK_IMPACT_ENABLED). */}
+                {SPARK_IMPACT_ENABLED && <option value="spark">Spark Impact</option>}
                 <option value="dark-strobe">Dark Strobe</option>
                 <option value="starfield">Star Field Tunnel</option>
               </select>
