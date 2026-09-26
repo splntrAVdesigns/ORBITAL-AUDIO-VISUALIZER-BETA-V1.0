@@ -16,6 +16,7 @@
 import { palettes, type ColorPalette } from '../data/colorPalettes';
 import { presets } from '../data/presets';
 import { defaultParams } from '../config/defaultParams';
+import { normalizeBeatPulseType } from '../config/beatPulseTypes';
 import {
   normalizeDotDensityForSlider,
   normalizeSpikeFftExponent,
@@ -328,7 +329,7 @@ export function createPresetActions(ctx: PresetActionsContext) {
       setCheckbox("#beatDetect", (preset as any).beatDetect !== undefined ? (preset as any).beatDetect : false);
       setSlider("#beatSensitivity", (preset as any).beatSensitivity !== undefined ? (preset as any).beatSensitivity : 0.65);
       setSlider("#effectAmount", (preset as any).effectAmount !== undefined ? (preset as any).effectAmount : 0.5);
-      setSelect("#beatPulseType", (preset as any).beatPulseType !== undefined ? (preset as any).beatPulseType : 'flash');
+      setSelect("#beatPulseType", normalizeBeatPulseType((preset as any).beatPulseType));
       setSlider("#darkStrobeDepth", (preset as any).darkStrobeDepth !== undefined ? (preset as any).darkStrobeDepth : defaultParams.darkStrobeDepth);
       setSlider("#starFieldCount", (preset as any).starFieldCount ?? defaultParams.starFieldCount);
       setSlider("#starFieldSpeed", (preset as any).starFieldSpeed ?? defaultParams.starFieldSpeed);
@@ -857,7 +858,7 @@ export function createPresetActions(ctx: PresetActionsContext) {
 
           beatDetect: chance(0.18),
           beatSensitivity: rand(0.55, 0.75),
-          beatPulseType: chance(0.08) ? 'dark-strobe' : pick(['flash', 'color', 'rainbow', 'spark', 'all']),
+          beatPulseType: chance(0.08) ? 'dark-strobe' : pick(['flash', 'color', 'rainbow', 'spark']),
           beatAccent: rand(1.0, 1.35),
           effectAmount: rand(0.24, 0.58),
           darkStrobeDepth: rand(0.48, 0.84),

@@ -1,4 +1,5 @@
 import { DEBUG_FLAGS } from '../src/app/config/debugFlags';
+import { normalizeBeatPulseType } from '../config/beatPulseTypes';
 import { markUserRequestedReload } from '../runtime/crashTelemetry';
 import { safeLocalStorage } from '../utils/browserCompat';
 import {
@@ -97,7 +98,7 @@ export function importOrbitalSettings(file: File) {
         const element = document.getElementById(key) as HTMLSelectElement | null;
         if (!element || typeof value !== 'string') continue;
         if (key === 'astralShape') syncLiquidShapeSelect(element, value as ShapeType);
-        else element.value = value;
+        else element.value = key === 'beatPulseType' ? normalizeBeatPulseType(value) : value;
         element.dispatchEvent(new Event('change', { bubbles:true }));
       }
 

@@ -170,7 +170,7 @@ const numericConstraints: Partial<Record<RuntimeParameterKey, NumericConstraint>
 
 const enumValues: Partial<Record<RuntimeParameterKey, readonly string[]>> = {
   reactivityMode: ['instant', 'smooth', 'hybrid', 'manual'],
-  beatPulseType: ['flash', 'color', 'rainbow', 'spark', 'dark-strobe', 'starfield', 'all'],
+  beatPulseType: ['flash', 'color', 'rainbow', 'spark', 'dark-strobe', 'starfield'],
   starFieldBlendMode: ['screen', 'lighter', 'source-over'],
   coreParticlesShapeMode: ['dot', 'tri', 'dia', 'all'],
   centerImageColorGrade: [

@@ -49,7 +49,7 @@ export const defaultParams = {
   reactivityHz: 60 as 30 | 60, // Audio/reactivity sampling cadence; visual RAF remains display-driven
   // Phase 2 features
   shockwave: false, shockwaveThreshold: 0.7, shockwaveSpeed: 1.0, shockwaveDecay: 0.85, shockwaveRings: 3,
-  // Spark impact is selected exclusively through beatPulseType ('spark' or 'all').
+  // Spark impact is selected exclusively through beatPulseType ('spark').
   sparkAmps: 0.5, sparkTrail: 0.5, sparkDensity: 0.5, sparkDispersion: 0.45, // 🚀 PHASE 5A: sparkDensity added for Macro4
   // Vectorscope Analyzer (Radial Frequency Visualizer)
   shapeOscillate: false, shapeEdgeTrails: 0.50, shapeDistortion: 0.30, shapeTurbulence: 0.50, shapeDecay: 0.22, shapeOrbitDrift: 0.40, shapeDensity: 0.75, shapeBurstStrength: 0.20,

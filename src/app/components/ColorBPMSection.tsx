@@ -215,7 +215,6 @@ function ColorBPMSection({ collapsed, onToggleCollapse }: ColorBPMSectionProps) 
                 <option value="spark">Spark Impact</option>
                 <option value="dark-strobe">Dark Strobe</option>
                 <option value="starfield">Star Field Tunnel</option>
-                <option value="all">All Effects</option>
               </select>
             </div>
 
