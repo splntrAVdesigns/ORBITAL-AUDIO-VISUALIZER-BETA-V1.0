@@ -6,8 +6,8 @@
  * each preset has a clearer visual identity without maxing every expensive feature.
  */
 
-export const PRESET_VERSION = '14K.2-beta-preset-refresh';
-export const PRESET_COUNT = 20;
+export const PRESET_VERSION = '14K.3-beta-feature-presets';
+export const PRESET_COUNT = 25;
 
 export interface PresetSettings {
   rotation: number;
@@ -28,6 +28,10 @@ export interface PresetSettings {
   haloStrobeEnabled?: boolean;
   rotationSyncMode?: 'free' | 'bpm' | 'quantized' | 'pingpong' | 'oscillator';
   rotationQuantize?: '4/1' | '2/1' | '1/1' | '1/2' | '1/4';
+  motionBlurEnabled?: boolean;
+  motionBlurPersistence?: number;
+  shockwaveSpeed?: number;
+  shockwaveDecay?: number;
   haloStrobeDivision?: string;
   haloCometDirection?: number;
   haloCometThickness?: number;
@@ -673,6 +677,140 @@ export const presets: Preset[] = [
       coreTexturesSpeed: 0.44,
       coreTexturesDensity: 0.55,
       coreTexturesGlowIntensity: 0.25,
+    }
+  },
+  // ── Sprint K3: five feature-showcase presets ──────────────────────────
+  {
+    // Star Field Tunnel flight, halo strobing on the quarter note.
+    name: 'Hyperspace',
+    settings: {
+      rotationSyncMode: 'bpm',
+      rotation: 0.10, mirror: 0.0, zoom: 1.0, trail: 0.50, halo: 0.70, bloom: 0.52,
+      dotsOn: false, dotsDensity: 0.10, gamma: 0.22, iridize: 0.10, chaos: 0.0,
+      glowCenter: true, glowStrength: 0.50, autoZoom: false, dotsPulse: false,
+      shockwave: false, shockwaveThreshold: 0.80, shockwaveRings: 2,
+      dotSize: 1.0, dotGlow: 0.20, dotRipple: 0.25, dotReactivity: 0.60,
+      hueSpeed: 0.14, zoomOsc: 0.004, fftSize: 10, reactivity: 0.48,
+      frequencySmoothing: true, autoRotateSpeed: 1, palette: 35,
+      spikeAttack: 0.40, spikeTightness: 0.72, spikeBloom: 0.34, spikeVariety: 0.30, transientBoost: 0.15,
+      haloStrobeEnabled: true, haloStrobeDivision: '1/4',
+      beatDetect: true, beatSensitivity: 0.62, beatPulseType: 'starfield', effectAmount: 0.70,
+      starFieldCount: 700, starFieldSpeed: 8, starFieldSpread: 100, starFieldSize: 7,
+      starFieldFocalDepth: 13, starFieldTurbulence: 2, starFieldGlitter: 6, starFieldTrail: 92,
+      starFieldReverse: false, starFieldBlendMode: 'lighter', starFieldBeatSync: true,
+      astralShaper: false, shapeOscillate: false,
+      ...cleanCenter,
+      centerImageVisible: false,
+      ...coreOff,
+    }
+  },
+  {
+    // Liquid Shaper morph showcase: path-interpolated shapes in molten gold.
+    name: 'Liquid Metal',
+    settings: {
+      rotationQuantize: '1/1',
+      rotationSyncMode: 'oscillator',
+      rotation: 0.20, mirror: 0.0, zoom: 1.0, trail: 0.50, halo: 0.48, bloom: 0.44,
+      dotsOn: false, dotsDensity: 0.08, gamma: 0.30, iridize: 0.18, chaos: 0.0,
+      glowCenter: true, glowStrength: 0.46, autoZoom: false, dotsPulse: false,
+      shockwave: false, shockwaveThreshold: 0.82, shockwaveRings: 2,
+      dotSize: 1.0, dotGlow: 0.20, dotRipple: 0.20, dotReactivity: 0.55,
+      hueSpeed: 0.08, zoomOsc: 0.0, fftSize: 10, reactivity: 0.40,
+      frequencySmoothing: true, autoRotateSpeed: 1, palette: 36,
+      spikeAttack: 0.30, spikeTightness: 0.84, spikeBloom: 0.18, spikeVariety: 0.10, transientBoost: 0.05,
+      beatDetect: false,
+      astralShaper: true, astralShape: 'kx-rosette', astralScale: 0.70, astralLineThickness: 1.10,
+      astralAutoCycle: true, astralCycleSpeed: 'medium', astralEnergyGlow: 0.34,
+      astralMorphMode: 'path-interpolate', astralMorphAmount: 0.85, astralMorphDamping: 0.40,
+      astralFieldModulation: 0.55, astralDepthEffect: true, astralStrokeStyle: 'glowing',
+      astralAudioInfluence: 0.85, astralPulseDepth: 0.32, astralRotationMult: 2.0,
+      astralRotationSpeedMod: true, astralKaleidoscope: false,
+      shapeOscillate: false,
+      ...cleanCenter,
+      centerImageVisible: false,
+      ...coreOff,
+    }
+  },
+  {
+    // Eighth-note halo strobe, shockwaves and Dark Strobe blackouts.
+    name: 'Strobe Temple',
+    settings: {
+      rotationQuantize: '1/4',
+      rotationSyncMode: 'quantized',
+      rotation: 0.14, mirror: 0.0, zoom: 1.0, trail: 0.50, halo: 0.88, bloom: 0.50,
+      dotsOn: true, dotsDensity: 0.30, gamma: 0.18, iridize: 0.0, chaos: 0.0,
+      glowCenter: true, glowStrength: 0.70, autoZoom: false, dotsPulse: true,
+      shockwave: true, shockwaveThreshold: 0.55, shockwaveSpeed: 1.30, shockwaveDecay: 0.80, shockwaveRings: 4,
+      dotSize: 1.10, dotGlow: 0.40, dotRipple: 0.45, dotReactivity: 0.95,
+      hueSpeed: 0.06, zoomOsc: 0.010, fftSize: 10, reactivity: 0.60,
+      frequencySmoothing: true, autoRotateSpeed: 1, palette: 39,
+      spikeAttack: 0.52, spikeTightness: 0.62, spikeBloom: 0.50, spikeVariety: 0.40, transientBoost: 0.35,
+      haloStrobeEnabled: true, haloStrobeDivision: '1/8',
+      beatDetect: true, beatSensitivity: 0.64, beatPulseType: 'dark-strobe', effectAmount: 0.55,
+      darkStrobeDepth: 0.70, darkStrobeDisplacement: 0.30,
+      astralShaper: false, shapeOscillate: false,
+      ...cleanCenter,
+      centerImageMotionType: 'cinematicPush', centerImageMotionAmount: 0.40, centerImageMotionIntensity: 0.30,
+      centerImageTransitionType: 'glitchCut',
+      ...coreOff,
+    }
+  },
+  {
+    // Core Particles over a Hologrid core texture, heavy Dot Ripple.
+    name: 'Neural Bloom',
+    settings: {
+      rotationQuantize: '1/2',
+      rotationSyncMode: 'oscillator',
+      rotation: 0.08, mirror: 0.0, zoom: 1.0, trail: 0.50, halo: 0.40, bloom: 0.46,
+      dotsOn: true, dotsDensity: 0.40, gamma: 0.36, iridize: 0.12, chaos: 0.0,
+      glowCenter: true, glowStrength: 0.52, autoZoom: false, dotsPulse: true,
+      shockwave: false, shockwaveThreshold: 0.82, shockwaveRings: 3,
+      dotSize: 1.25, dotGlow: 0.42, dotRipple: 0.85, dotReactivity: 0.82,
+      hueSpeed: 0.18, zoomOsc: 0.005, fftSize: 10, reactivity: 0.40,
+      frequencySmoothing: true, autoRotateSpeed: 1, palette: 31,
+      spikeAttack: 0.32, spikeTightness: 0.60, spikeBloom: 0.26, spikeVariety: 0.35, transientBoost: 0.05,
+      beatDetect: false,
+      astralShaper: false,
+      shapeOscillate: true,
+      shapeEdgeTrails: 0.55, shapeDecay: 0.35, shapeDistortion: 0.30, shapeBurstStrength: 0.45,
+      shapeTurbulence: 0.40, shapeOrbitDrift: 0.50, shapeDensity: 0.80,
+      coreParticlesShapeMode: 'dot',
+      ...cleanCenter,
+      centerImageVisible: false,
+      ...coreOff,
+      coreTexturesEnabled: true,
+      coreTexturesShaderId: 'hologrid-depth-tunnel',
+      coreTexturesOpacity: 0.85,
+      coreTexturesAudioIntensity: 0.30,
+      coreTexturesFrequencyRange: 'full',
+      coreTexturesBeatSync: false,
+      coreTexturesSpeed: 0.38,
+      coreTexturesDensity: 0.45,
+      coreTexturesGlowIntensity: 0.32,
+    }
+  },
+  {
+    // Motion Blur trails, BPM-locked rotation, fast Halo Comet.
+    name: 'Velocity',
+    settings: {
+      rotationSyncMode: 'bpm',
+      rotation: 0.42, mirror: 0.0, zoom: 1.0, trail: 0.50, halo: 0.58, bloom: 0.46,
+      dotsOn: true, dotsDensity: 0.22, gamma: 0.24, iridize: 0.20, chaos: 0.0,
+      glowCenter: true, glowStrength: 0.56, autoZoom: false, dotsPulse: false,
+      shockwave: false, shockwaveThreshold: 0.80, shockwaveRings: 2,
+      dotSize: 1.0, dotGlow: 0.30, dotRipple: 0.40, dotReactivity: 0.75,
+      hueSpeed: 0.30, zoomOsc: 0.006, fftSize: 10, reactivity: 0.52,
+      frequencySmoothing: true, autoRotateSpeed: 1, palette: 33,
+      spikeAttack: 0.44, spikeTightness: 0.70, spikeBloom: 0.40, spikeVariety: 0.25, transientBoost: 0.20,
+      motionBlurEnabled: true, motionBlurPersistence: 0.60,
+      haloCometEnabled: true, haloCometSpeed: 0.45, haloCometDirection: 1,
+      haloCometThickness: 3.2, haloCometTailLength: 0.40,
+      beatDetect: true, beatSensitivity: 0.60, beatPulseType: 'color', effectAmount: 0.45,
+      astralShaper: false, shapeOscillate: false,
+      ...cleanCenter,
+      centerImageMotionType: 'organicDrift', centerImageMotionAmount: 0.30, centerImageMotionIntensity: 0.24,
+      centerImageTransitionType: 'pushFade',
+      ...coreOff,
     }
   }
 ];

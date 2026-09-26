@@ -33,7 +33,7 @@ test('requested built-in preset tuning is exact and all Core Particle presets us
   const { presets, PRESET_VERSION } = await importBundledTypescript('src/app/data/presets.ts', context);
   const settings = name => presets.find(preset => preset.name === name)?.settings;
 
-  assert.equal(PRESET_VERSION, '14K.2-beta-preset-refresh');
+  assert.equal(PRESET_VERSION, '14K.3-beta-feature-presets');
   assert.deepEqual(
     { fftSize: settings('Minimalscape').fftSize, mirror: settings('Minimalscape').mirror, chaos: settings('Minimalscape').chaos },
     { fftSize: 9, mirror: 0.23, chaos: 0 },
@@ -101,7 +101,7 @@ test('requested built-in preset tuning is exact and all Core Particle presets us
   assert.equal(settings('Ethereal Bloom').chaos, 0);
 
   const coreParticlePresets = presets.filter(preset => preset.settings.shapeOscillate === true);
-  assert.equal(coreParticlePresets.length, 3);
+  assert.equal(coreParticlePresets.length, 4); // Sprint K3: + Neural Bloom
   for (const preset of coreParticlePresets) {
     assert.equal(preset.settings.shapeDistortion, 0.30, `${preset.name} must recall 30% Core Particle Spread`);
   }
@@ -110,4 +110,26 @@ test('requested built-in preset tuning is exact and all Core Particle presets us
 test('preset recall routes Rotation Speed Mod through the same preset control authority', () => {
   const actions = read('src/app/utils/presetActions.ts');
   assert.match(actions, /setCheckbox\("#astralRotationSpeedMod", .*astralRotationSpeedMod/);
+});
+
+test('Sprint K3 feature presets exist with their hero features and every preset has a unique palette', async context => {
+  const { presets, PRESET_COUNT } = await importBundledTypescript('src/app/data/presets.ts', context);
+  assert.equal(presets.length, 25);
+  assert.equal(PRESET_COUNT, presets.length, 'PRESET_COUNT must match the preset array');
+  const byName = Object.fromEntries(presets.map(p => [p.name, p.settings]));
+  const expect = {
+    Hyperspace: { beatDetect: true, beatPulseType: 'starfield', haloStrobeEnabled: true, haloStrobeDivision: '1/4', palette: 35 },
+    'Liquid Metal': { astralShaper: true, astralMorphMode: 'path-interpolate', rotationSyncMode: 'oscillator', palette: 36 },
+    'Strobe Temple': { beatDetect: true, beatPulseType: 'dark-strobe', haloStrobeEnabled: true, haloStrobeDivision: '1/8', shockwave: true, palette: 39 },
+    'Neural Bloom': { shapeOscillate: true, shapeDistortion: 0.30, coreTexturesEnabled: true, coreTexturesShaderId: 'hologrid-depth-tunnel', palette: 31 },
+    Velocity: { motionBlurEnabled: true, haloCometEnabled: true, rotationSyncMode: 'bpm', palette: 33 },
+  };
+  for (const [name, fields] of Object.entries(expect)) {
+    assert.ok(byName[name], `${name} preset must exist`);
+    for (const [key, value] of Object.entries(fields)) {
+      assert.equal(byName[name][key], value, `${name}.${key}`);
+    }
+  }
+  const palettes = presets.map(p => p.settings.palette);
+  assert.equal(new Set(palettes).size, palettes.length, 'every built-in preset must use a distinct palette');
 });
