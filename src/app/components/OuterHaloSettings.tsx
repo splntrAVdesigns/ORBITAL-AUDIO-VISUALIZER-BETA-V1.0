@@ -97,20 +97,6 @@ function OuterHaloSettings({ collapsed, onToggleCollapse }: OuterHaloSettingsPro
         <label className="switch"><input id="haloCometEnabled" type="checkbox" defaultChecked={defaultParams.haloCometEnabled} /><span className="thumb"></span></label>
       </div>
       <div className="row control"><span className="label">Speed</span><input id="haloCometSpeed" type="range" min="0.05" max="1" step="0.01" defaultValue={defaultParams.haloCometSpeed} /></div>
-      <div style={{ borderTop: '1px solid rgba(30,144,255,0.2)', marginTop: '12px', marginBottom: '12px' }}></div>
-      <div className="row">
-        <span className="label" style={{ color: 'var(--neonBlue)', fontWeight: 800, letterSpacing: '0.04em' }}>Halo Strobe</span>
-        <label className="switch"><input id="haloStrobeEnabled" type="checkbox" defaultChecked={defaultParams.haloStrobeEnabled} /><span className="thumb"></span></label>
-      </div>
-      <div className="row control">
-        <span className="label">Rate</span>
-        <select id="haloStrobeDivision" className="select" style={{ flex: 1, fontSize: '10px', padding: '4px 6px' }} defaultValue={defaultParams.haloStrobeDivision}>
-          <option value="1/1">1/1 (Bar)</option>
-          <option value="1/2">1/2 (Half)</option>
-          <option value="1/4">1/4 (Quarter)</option>
-          <option value="1/8">1/8 (Eighth)</option>
-        </select>
-      </div>
 
       <div className="row" style={{ alignItems: 'center' }}>
         <span className="label">Direction</span>
@@ -145,7 +131,22 @@ function OuterHaloSettings({ collapsed, onToggleCollapse }: OuterHaloSettingsPro
       </div>
       <div className="row control"><span className="label">Thickness</span><input id="haloCometThickness" type="range" min="1" max="10" step="0.25" defaultValue={defaultParams.haloCometThickness} /></div>
       <div className="row control"><span className="label">Tail Length</span><input id="haloCometTailLength" type="range" min="0.05" max="0.65" step="0.01" defaultValue={defaultParams.haloCometTailLength} /></div>
-      
+
+      <div style={{ borderTop: '1px solid rgba(30,144,255,0.2)', marginTop: '12px', marginBottom: '12px' }}></div>
+      <div className="row">
+        <span className="label" style={{ color: 'var(--neonBlue)', fontWeight: 800, letterSpacing: '0.04em' }}>Halo Strobe</span>
+        <label className="switch"><input id="haloStrobeEnabled" type="checkbox" defaultChecked={defaultParams.haloStrobeEnabled} /><span className="thumb"></span></label>
+      </div>
+      <div className="row control">
+        <span className="label">Rate</span>
+        <select id="haloStrobeDivision" className="select" style={{ flex: 1, fontSize: '10px', padding: '4px 6px' }} defaultValue={defaultParams.haloStrobeDivision}>
+          <option value="1/1">1/1 (Bar)</option>
+          <option value="1/2">1/2 (Half)</option>
+          <option value="1/4">1/4 (Quarter)</option>
+          <option value="1/8">1/8 (Eighth)</option>
+        </select>
+      </div>
+
       <div style={{ borderTop: '1px solid rgba(30,144,255,0.2)', marginTop: '12px', marginBottom: '12px' }}></div>
       <div className="row">
         <span className="label" style={{ color: 'var(--neonBlue)', fontWeight: 800, letterSpacing: '0.04em' }}>Center Glow</span>
