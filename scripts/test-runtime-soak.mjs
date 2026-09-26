@@ -74,7 +74,6 @@ try {
     hue: 198,
     impact: 0,
     amps: 0.82,
-    trail: 0.68,
     density: 0.72,
     dispersion: 0.85,
     bassEnergy: 0.08,

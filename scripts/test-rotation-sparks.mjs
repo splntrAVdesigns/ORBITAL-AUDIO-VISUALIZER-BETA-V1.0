@@ -112,7 +112,6 @@ try {
     hue: 200,
     impact: 0.92,
     amps: 0.8,
-    trail: 0.7,
     density: 0.8,
     dispersion: 0.9,
     bassEnergy: 0.95,

@@ -49,7 +49,6 @@ const numericConstraints: Partial<Record<RuntimeParameterKey, NumericConstraint>
   tail: { minimum: 0, maximum: 1 },
   halo: { minimum: 0, maximum: 1.5 },
   bloom: { minimum: 0, maximum: 1 },
-  trail: { minimum: 0, maximum: 1 },
   // Presets may store normalized density (0-1); the live renderer stores 22-270 dots.
   dotsDensity: { minimum: 0, maximum: 270 },
   gamma: { minimum: 0, maximum: 1 },

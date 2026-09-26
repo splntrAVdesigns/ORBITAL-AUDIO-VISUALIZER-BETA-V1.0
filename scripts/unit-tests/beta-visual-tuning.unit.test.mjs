@@ -133,3 +133,17 @@ test('Sprint K3 feature presets exist with their hero features and every preset 
   const palettes = presets.map(p => p.settings.palette);
   assert.equal(new Set(palettes).size, palettes.length, 'every built-in preset must use a distinct palette');
 });
+
+test('legacy trail parameter stays removed and zoom stays a viewport-only setting', async context => {
+  const { presets } = await importBundledTypescript('src/app/data/presets.ts', context);
+  const { defaultParams } = await importBundledTypescript('src/app/config/defaultParams.ts', context);
+  assert.equal('trail' in defaultParams, false, 'defaultParams must not reintroduce trail');
+  for (const preset of presets) {
+    assert.equal('trail' in preset.settings, false, `${preset.name} must not set the removed trail parameter`);
+  }
+  const macros = fs.readFileSync('src/app/config/macroDefinitions.ts', 'utf8');
+  assert.doesNotMatch(macros, /param:\s*'trail'/, 'macros must not target the removed trail parameter');
+  const actions = fs.readFileSync('src/app/utils/presetActions.ts', 'utf8');
+  const applyBody = actions.slice(actions.indexOf('function applyPreset('), actions.indexOf('function syncMacrosToPreset('));
+  assert.doesNotMatch(applyBody, /preset\.zoom\b|['"]#zoom['"]/, 'zoom is a mouse-wheel viewport setting and must not be applied on preset load');
+});

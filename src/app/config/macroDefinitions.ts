@@ -27,7 +27,6 @@ export const macroMappings: { [key: string]: MacroMapping[] } = {
   ],
   macro2: [ // MOTION - global movement only; avoids live center-motion hijacking while dragging
     { param: 'rotation',        min: 0.00, max: 0.72 },
-    { param: 'trail',           min: 0.50, max: 0.82 },
     { param: 'autoRotateSpeed', min: 1.00, max: 1.55 },
     { param: 'motionBlur',      min: 0.00, max: 0.18 },
   ],
@@ -59,7 +58,6 @@ export const macroMappings: { [key: string]: MacroMapping[] } = {
   macro6: [ // DOTS - smooth visual emphasis only; avoids live density segmentation glitches
     { param: 'dotSize',        min: 2.00, max: 4.20 },
     { param: 'dotGlow',        min: 1.00, max: 2.10 },
-    { param: 'trail',          min: 0.50, max: 0.74 },
   ],
   macro7: [ // TEXTURE - core/liquid texture depth with guarded auto-enable
     { param: 'coreTexturesOpacity',        min: 0.18, max: 0.72 },

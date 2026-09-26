@@ -179,7 +179,6 @@ export function createSectionResets({ ctx, params, applyMacro, paletteLabel }: S
       
       updateControl('#dotsOn', defaultParams.dotsOn);
       updateControl('#dotsPulse', defaultParams.dotsPulse);
-      updateControl('#trail', defaultParams.trail);
       updateControl('#density', normalizeDotDensityForSlider(defaultParams.dotsDensity));
       updateControl('#dotSize', defaultParams.dotSize);
       updateControl('#dotGlow', defaultParams.dotGlow);

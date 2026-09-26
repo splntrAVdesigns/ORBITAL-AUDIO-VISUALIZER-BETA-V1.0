@@ -164,11 +164,8 @@ export function createSessionInteractionSetup(options: SessionInteractionSetupOp
     eventRegistry.listen(performanceModeCheckbox, 'change', (event) => {
       if (!(event.target as HTMLInputElement).checked) return;
       params.bloom = Math.min(params.bloom, 0.25);
-      params.trail = Math.max(params.trail, 0.75);
       const bloom = getElement('#bloom') as HTMLInputElement | null;
-      const trail = getElement('#trail') as HTMLInputElement | null;
       if (bloom) bloom.value = String(params.bloom);
-      if (trail) trail.value = String(params.trail);
     });
   }
 

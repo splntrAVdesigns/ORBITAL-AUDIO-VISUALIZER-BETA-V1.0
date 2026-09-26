@@ -14,7 +14,7 @@ import type { CenterMotionProfile, CenterMotionType } from '../utils/centerMotio
 export const defaultParams = {
   rotation: 0.00, mirror: 0.0, zoom: 1.0, lineWidth: 2.0,
   innerRadius: .28, tail: 0.30, halo: 1.0, bloom: 0.5, // 🎯 tail: 0.30 = spike attack
-  dotsOn: true, trail: 0.50, dotsDensity: 32.8, allowZoom: false, gamma: 0.0, // 🎯 dotsDensity: 32.8 = slider 0.25 (exactly 25%)
+  dotsOn: true, dotsDensity: 32.8, allowZoom: false, gamma: 0.0, // 🎯 dotsDensity: 32.8 = slider 0.25 (exactly 25%)
   iridize: 0.0, chaos: 0.0, spectrum: false,
   orbitalEnergy: 0.0, // ORBITAL ENERGY: Animated pulse traveling around halo (0-2.0)
   orbitalWidth: 0.3, // Pulse width (0.1=narrow comet, 1.0=wide glow)

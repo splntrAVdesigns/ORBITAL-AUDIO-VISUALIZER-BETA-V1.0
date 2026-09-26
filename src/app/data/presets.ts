@@ -12,11 +12,10 @@ export const PRESET_COUNT = 25;
 export interface PresetSettings {
   rotation: number;
   mirror: number;
-  zoom?: number;
+  zoom?: number; // Viewport setting (mouse wheel); not applied on preset load
   halo: number;
   bloom: number;
   dotsOn: boolean;
-  trail: number;
   dotsDensity: number;
   gamma: number;
   iridize: number;
@@ -210,7 +209,7 @@ export const presets: Preset[] = [
     name: 'DEFAULT',
     settings: {
       rotation: 0.04, mirror: 0.0, zoom: 1.0, halo: 0.85, bloom: 0.38,
-      dotsOn: true, trail: 0.50, dotsDensity: 0.26, gamma: 0.0, iridize: 0.0, chaos: 0.0,
+      dotsOn: true, dotsDensity: 0.26, gamma: 0.0, iridize: 0.0, chaos: 0.0,
       glowCenter: false, glowStrength: 0.45, autoZoom: false, dotsPulse: false,
       shockwave: false, shockwaveThreshold: 0.76, shockwaveRings: 3,
       dotSize: 1.8, dotGlow: 0.55, dotRipple: 0.75, dotReactivity: 0.85,
@@ -230,7 +229,7 @@ export const presets: Preset[] = [
       rotationQuantize: '4/1',
       rotationSyncMode: 'oscillator',
       rotation: 0.06, mirror: 0.0, zoom: 0.95, halo: 0.62, bloom: 0.26,
-      dotsOn: true, trail: 0.72, dotsDensity: 0.18, gamma: 0.05, iridize: 0.12, chaos: 0.0,
+      dotsOn: true, dotsDensity: 0.18, gamma: 0.05, iridize: 0.12, chaos: 0.0,
       glowCenter: true, glowStrength: 0.38, autoZoom: false, dotsPulse: true,
       shockwave: false, shockwaveThreshold: 0.82, shockwaveRings: 2,
       dotSize: 1.35, dotGlow: 0.28, dotRipple: 0.37, dotReactivity: 0.55,
@@ -251,7 +250,7 @@ export const presets: Preset[] = [
       rotationQuantize: '1/2',
       rotationSyncMode: 'pingpong',
       rotation: 0.02, mirror: 0.0, zoom: 1.12, halo: 1.0, bloom: 0.68,
-      dotsOn: true, trail: 0.22, dotsDensity: 0.22, gamma: 0.45, iridize: 0.05, chaos: 0.18,
+      dotsOn: true, dotsDensity: 0.22, gamma: 0.45, iridize: 0.05, chaos: 0.18,
       glowCenter: true, glowStrength: 0.88, autoZoom: true, dotsPulse: false,
       shockwave: true, shockwaveThreshold: 0.50, shockwaveRings: 4,
       dotSize: 1.75, dotGlow: 0.55, dotRipple: 0.75, dotReactivity: 1.2,
@@ -272,7 +271,7 @@ export const presets: Preset[] = [
       rotationQuantize: '1/1',
       rotationSyncMode: 'pingpong',
       rotation: 0.34, mirror: 0.0, zoom: 1.02, halo: 1.08, bloom: 0.78,
-      dotsOn: true, trail: 0.26, dotsDensity: 0.42, gamma: 0.30, iridize: 0.00, chaos: 0.20,
+      dotsOn: true, dotsDensity: 0.42, gamma: 0.30, iridize: 0.00, chaos: 0.20,
       glowCenter: false, glowStrength: 0.55, autoZoom: false, dotsPulse: true,
       shockwave: false, shockwaveThreshold: 0.64, shockwaveRings: 3,
       dotSize: 1.7, dotGlow: 0.52, dotRipple: 0.71, dotReactivity: 1.1,
@@ -296,7 +295,7 @@ export const presets: Preset[] = [
       rotationQuantize: '1/1',
       rotationSyncMode: 'quantized',
       rotation: 0.14, mirror: 0.0, zoom: 1.0, halo: 0.92, bloom: 0.62,
-      dotsOn: true, trail: 0.42, dotsDensity: 0.30, gamma: 0.10, iridize: 0.30, chaos: 0.0,
+      dotsOn: true, dotsDensity: 0.30, gamma: 0.10, iridize: 0.30, chaos: 0.0,
       glowCenter: true, glowStrength: 0.60, autoZoom: false, dotsPulse: true,
       shockwave: false, shockwaveThreshold: 0.74, shockwaveRings: 3,
       dotSize: 1.55, dotGlow: 0.62, dotRipple: 0.85, dotReactivity: 0.95,
@@ -317,7 +316,7 @@ export const presets: Preset[] = [
     settings: {
       rotationSyncMode: 'bpm',
       rotation: 0.10, mirror: 0.0, zoom: 1.04, halo: 0.78, bloom: 0.44,
-      dotsOn: true, trail: 0.66, dotsDensity: 0.34, gamma: 0.12, iridize: 0.28, chaos: 0.0,
+      dotsOn: true, dotsDensity: 0.34, gamma: 0.12, iridize: 0.28, chaos: 0.0,
       glowCenter: true, glowStrength: 0.70, autoZoom: false, dotsPulse: true,
       shockwave: false, shockwaveThreshold: 0.78, shockwaveRings: 3,
       dotSize: 1.65, dotGlow: 0.42, dotRipple: 0.57, dotReactivity: 0.82,
@@ -345,7 +344,7 @@ export const presets: Preset[] = [
     name: 'Minimal Zen',
     settings: {
       rotation: 0.0, mirror: 0.0, zoom: 0.82, halo: 0.22, bloom: 0.06,
-      dotsOn: true, trail: 0.82, dotsDensity: 0.10, gamma: 0.0, iridize: 0.0, chaos: 0.0,
+      dotsOn: true, dotsDensity: 0.10, gamma: 0.0, iridize: 0.0, chaos: 0.0,
       glowCenter: false, glowStrength: 0.18, autoZoom: false, dotsPulse: false,
       shockwave: false, shockwaveThreshold: 0.84, shockwaveRings: 2,
       dotSize: 1.05, dotGlow: 0.12, dotRipple: 0.15, dotReactivity: 0.34,
@@ -364,7 +363,7 @@ export const presets: Preset[] = [
     name: 'Minimalscape',
     settings: {
       rotation: 0.02, mirror: 0.23, zoom: 0.92, halo: 0.0, bloom: 0.10,
-      dotsOn: true, trail: 0.74, dotsDensity: 0.14, gamma: 0.02, iridize: 0.10, chaos: 0.0,
+      dotsOn: true, dotsDensity: 0.14, gamma: 0.02, iridize: 0.10, chaos: 0.0,
       glowCenter: false, glowStrength: 0.18, autoZoom: false, dotsPulse: false,
       shockwave: false, shockwaveThreshold: 0.84, shockwaveRings: 2,
       dotSize: 1.15, dotGlow: 0.18, dotRipple: 0.23, dotReactivity: 0.42,
@@ -393,7 +392,7 @@ export const presets: Preset[] = [
       rotationQuantize: '2/1',
       rotationSyncMode: 'oscillator',
       rotation: 0.05, mirror: 0.0, zoom: 1.03, halo: 1.12, bloom: 0.76,
-      dotsOn: true, trail: 0.46, dotsDensity: 0.16, gamma: 0.20, iridize: 0.15, chaos: 0.00,
+      dotsOn: true, dotsDensity: 0.16, gamma: 0.20, iridize: 0.15, chaos: 0.00,
       glowCenter: true, glowStrength: 0.72, autoZoom: false, dotsPulse: false,
       shockwave: false, shockwaveThreshold: 0.68, shockwaveRings: 3,
       dotSize: 1.85, dotGlow: 0.40, dotRipple: 0.54, dotReactivity: 0.72,
@@ -414,7 +413,7 @@ export const presets: Preset[] = [
     settings: {
       rotationSyncMode: 'bpm',
       rotation: 0.18, mirror: 0.15, zoom: 1.0, halo: 0.98, bloom: 0.64,
-      dotsOn: true, trail: 0.52, dotsDensity: 0.10, gamma: 0.22, iridize: 0.38, chaos: 0.0,
+      dotsOn: true, dotsDensity: 0.10, gamma: 0.22, iridize: 0.38, chaos: 0.0,
       glowCenter: true, glowStrength: 0.62, autoZoom: false, dotsPulse: false,
       shockwave: false, shockwaveThreshold: 0.78, shockwaveRings: 3,
       dotSize: 1.10, dotGlow: 0.62, dotRipple: 0.85, dotReactivity: 0.86,
@@ -436,7 +435,7 @@ export const presets: Preset[] = [
       rotationQuantize: '1/4',
       rotationSyncMode: 'quantized',
       rotation: 0.28, mirror: 0.0, zoom: 1.0, halo: 0.70, bloom: 0.44,
-      dotsOn: true, trail: 0.30, dotsDensity: 0.32, gamma: 0.20, iridize: 0.00, chaos: 0.35,
+      dotsOn: true, dotsDensity: 0.32, gamma: 0.20, iridize: 0.00, chaos: 0.35,
       glowCenter: false, glowStrength: 0.42, autoZoom: false, dotsPulse: false,
       shockwave: false, shockwaveThreshold: 0.72, shockwaveRings: 2,
       dotSize: 1.28, dotGlow: 0.36, dotRipple: 0.49, dotReactivity: 1.22,
@@ -470,7 +469,7 @@ export const presets: Preset[] = [
       rotationQuantize: '1/2',
       rotationSyncMode: 'quantized',
       rotation: 0.16, mirror: 0.0, zoom: 1.04, halo: 0.92, bloom: 0.58,
-      dotsOn: true, trail: 0.36, dotsDensity: 0.45, gamma: 0.20, iridize: 0.00, chaos: 0.0,
+      dotsOn: true, dotsDensity: 0.45, gamma: 0.20, iridize: 0.00, chaos: 0.0,
       glowCenter: true, glowStrength: 0.76, autoZoom: true, dotsPulse: false,
       shockwave: true, shockwaveThreshold: 0.50, shockwaveRings: 3,
       dotSize: 1.00, dotGlow: 0.56, dotRipple: 0.77, dotReactivity: 1.0,
@@ -491,7 +490,7 @@ export const presets: Preset[] = [
     settings: {
       rotationSyncMode: 'bpm',
       rotation: 0.35, mirror: 0.0, zoom: 0.96, halo: 0.62, bloom: 0.34,
-      dotsOn: false, trail: 0.64, dotsDensity: 0.08, gamma: 0.16, iridize: 0.28, chaos: 0.0,
+      dotsOn: false, dotsDensity: 0.08, gamma: 0.16, iridize: 0.28, chaos: 0.0,
       glowCenter: false, glowStrength: 0.38, autoZoom: false, dotsPulse: false,
       shockwave: false, shockwaveThreshold: 0.82, shockwaveRings: 2,
       dotSize: 1.0, dotGlow: 0.18, dotRipple: 0.23, dotReactivity: 0.55,
@@ -513,7 +512,7 @@ export const presets: Preset[] = [
     name: 'Cosmic Geometry',
     settings: {
       rotation: 0.10, mirror: 0.0, zoom: 0.94, halo: 0.50, bloom: 0.30,
-      dotsOn: true, trail: 0.68, dotsDensity: 0.12, gamma: 0.50, iridize: 0.00, chaos: 0.0,
+      dotsOn: true, dotsDensity: 0.12, gamma: 0.50, iridize: 0.00, chaos: 0.0,
       glowCenter: false, glowStrength: 0.42, autoZoom: false, dotsPulse: false,
       shockwave: false, shockwaveThreshold: 0.80, shockwaveRings: 3,
       dotSize: 1.25, dotGlow: 0.28, dotRipple: 0.37, dotReactivity: 0.70,
@@ -537,7 +536,7 @@ export const presets: Preset[] = [
       rotationQuantize: '1/1',
       rotationSyncMode: 'oscillator',
       rotation: 0.06, mirror: 0.0, zoom: 1.02, halo: 0.30, bloom: 0.48,
-      dotsOn: true, trail: 0.58, dotsDensity: 0.18, gamma: 0.50, iridize: 0.00, chaos: 0.00,
+      dotsOn: true, dotsDensity: 0.18, gamma: 0.50, iridize: 0.00, chaos: 0.00,
       glowCenter: true, glowStrength: 0.58, autoZoom: false, dotsPulse: true,
       shockwave: false, shockwaveThreshold: 0.82, shockwaveRings: 3,
       dotSize: 1.35, dotGlow: 0.38, dotRipple: 0.51, dotReactivity: 0.86,
@@ -574,7 +573,7 @@ export const presets: Preset[] = [
       rotationQuantize: '2/1',
       rotationSyncMode: 'pingpong',
       rotation: 0.20, mirror: 0.0, zoom: 1.0, halo: 0.82, bloom: 0.54,
-      dotsOn: true, trail: 0.30, dotsDensity: 0.52, gamma: 0.34, iridize: 0.42, chaos: 0.0,
+      dotsOn: true, dotsDensity: 0.52, gamma: 0.34, iridize: 0.42, chaos: 0.0,
       glowCenter: false, glowStrength: 0.46, autoZoom: false, dotsPulse: false,
       shockwave: false, shockwaveThreshold: 0.78, shockwaveRings: 3,
       dotSize: 1.05, dotGlow: 0.52, dotRipple: 0.71, dotReactivity: 1.35,
@@ -594,7 +593,7 @@ export const presets: Preset[] = [
       rotationQuantize: '2/1',
       rotationSyncMode: 'quantized',
       rotation: 0.03, mirror: 0.0, zoom: 1.14, halo: 0.96, bloom: 0.62,
-      dotsOn: true, trail: 0.24, dotsDensity: 0.20, gamma: 0.42, iridize: 0.16, chaos: 0.0,
+      dotsOn: true, dotsDensity: 0.20, gamma: 0.42, iridize: 0.16, chaos: 0.0,
       glowCenter: true, glowStrength: 0.82, autoZoom: false, dotsPulse: false,
       shockwave: true, shockwaveThreshold: 0.58, shockwaveRings: 3,
       dotSize: 1.85, dotGlow: 0.50, dotRipple: 0.68, dotReactivity: 1.25,
@@ -613,7 +612,7 @@ export const presets: Preset[] = [
     settings: {
       rotationSyncMode: 'bpm',
       rotation: 0.02, mirror: 0.0, zoom: 0.92, halo: 0.38, bloom: 0.28,
-      dotsOn: true, trail: 0.66, dotsDensity: 0.12, gamma: 0.12, iridize: 0.22, chaos: 0.0,
+      dotsOn: true, dotsDensity: 0.12, gamma: 0.12, iridize: 0.22, chaos: 0.0,
       glowCenter: false, glowStrength: 0.28, autoZoom: false, dotsPulse: true,
       shockwave: false, shockwaveThreshold: 0.82, shockwaveRings: 2,
       dotSize: 1.35, dotGlow: 0.28, dotRipple: 0.37, dotReactivity: 0.70,
@@ -634,7 +633,7 @@ export const presets: Preset[] = [
       rotationQuantize: '1/2',
       rotationSyncMode: 'oscillator',
       rotation: 0.32, mirror: 0.0, zoom: 1.02, halo: 0.86, bloom: 0.58,
-      dotsOn: true, trail: 0.24, dotsDensity: 0.40, gamma: 0.58, iridize: 0.74, chaos: 0.0,
+      dotsOn: true, dotsDensity: 0.40, gamma: 0.58, iridize: 0.74, chaos: 0.0,
       glowCenter: false, glowStrength: 0.46, autoZoom: false, dotsPulse: false,
       shockwave: false, shockwaveThreshold: 0.72, shockwaveRings: 3,
       dotSize: 1.48, dotGlow: 0.48, dotRipple: 0.65, dotReactivity: 1.45,
@@ -653,7 +652,7 @@ export const presets: Preset[] = [
     name: 'Ethereal Bloom',
     settings: {
       rotation: 0.06, mirror: 0.0, zoom: 0.96, halo: 1.16, bloom: 0.84,
-      dotsOn: true, trail: 0.76, dotsDensity: 0.12, gamma: 0.00, iridize: 0.20, chaos: 0.0,
+      dotsOn: true, dotsDensity: 0.12, gamma: 0.00, iridize: 0.20, chaos: 0.0,
       glowCenter: true, glowStrength: 0.82, autoZoom: false, dotsPulse: false,
       shockwave: false, shockwaveThreshold: 0.82, shockwaveRings: 2,
       dotSize: 1.34, dotGlow: 0.46, dotRipple: 0.63, dotReactivity: 0.68,
@@ -685,7 +684,7 @@ export const presets: Preset[] = [
     name: 'Hyperspace',
     settings: {
       rotationSyncMode: 'bpm',
-      rotation: 0.10, mirror: 0.0, zoom: 1.0, trail: 0.50, halo: 0.70, bloom: 0.52,
+      rotation: 0.10, mirror: 0.0, halo: 0.70, bloom: 0.52,
       dotsOn: false, dotsDensity: 0.10, gamma: 0.22, iridize: 0.10, chaos: 0.0,
       glowCenter: true, glowStrength: 0.50, autoZoom: false, dotsPulse: false,
       shockwave: false, shockwaveThreshold: 0.80, shockwaveRings: 2,
@@ -710,7 +709,7 @@ export const presets: Preset[] = [
     settings: {
       rotationQuantize: '1/1',
       rotationSyncMode: 'oscillator',
-      rotation: 0.20, mirror: 0.0, zoom: 1.0, trail: 0.50, halo: 0.48, bloom: 0.44,
+      rotation: 0.20, mirror: 0.0, halo: 0.48, bloom: 0.44,
       dotsOn: false, dotsDensity: 0.08, gamma: 0.30, iridize: 0.18, chaos: 0.0,
       glowCenter: true, glowStrength: 0.46, autoZoom: false, dotsPulse: false,
       shockwave: false, shockwaveThreshold: 0.82, shockwaveRings: 2,
@@ -737,7 +736,7 @@ export const presets: Preset[] = [
     settings: {
       rotationQuantize: '1/4',
       rotationSyncMode: 'quantized',
-      rotation: 0.14, mirror: 0.0, zoom: 1.0, trail: 0.50, halo: 0.88, bloom: 0.50,
+      rotation: 0.14, mirror: 0.0, halo: 0.88, bloom: 0.50,
       dotsOn: true, dotsDensity: 0.30, gamma: 0.18, iridize: 0.0, chaos: 0.0,
       glowCenter: true, glowStrength: 0.70, autoZoom: false, dotsPulse: true,
       shockwave: true, shockwaveThreshold: 0.55, shockwaveSpeed: 1.30, shockwaveDecay: 0.80, shockwaveRings: 4,
@@ -761,7 +760,7 @@ export const presets: Preset[] = [
     settings: {
       rotationQuantize: '1/2',
       rotationSyncMode: 'oscillator',
-      rotation: 0.08, mirror: 0.0, zoom: 1.0, trail: 0.50, halo: 0.40, bloom: 0.46,
+      rotation: 0.08, mirror: 0.0, halo: 0.40, bloom: 0.46,
       dotsOn: true, dotsDensity: 0.40, gamma: 0.36, iridize: 0.12, chaos: 0.0,
       glowCenter: true, glowStrength: 0.52, autoZoom: false, dotsPulse: true,
       shockwave: false, shockwaveThreshold: 0.82, shockwaveRings: 3,
@@ -794,7 +793,7 @@ export const presets: Preset[] = [
     name: 'Velocity',
     settings: {
       rotationSyncMode: 'bpm',
-      rotation: 0.42, mirror: 0.0, zoom: 1.0, trail: 0.50, halo: 0.58, bloom: 0.46,
+      rotation: 0.42, mirror: 0.0, halo: 0.58, bloom: 0.46,
       dotsOn: true, dotsDensity: 0.22, gamma: 0.24, iridize: 0.20, chaos: 0.0,
       glowCenter: true, glowStrength: 0.56, autoZoom: false, dotsPulse: false,
       shockwave: false, shockwaveThreshold: 0.80, shockwaveRings: 2,
