@@ -98,6 +98,7 @@ export function initializeVisualizerControlDefaults(
       // ❌ REMOVED: trail slider (fade is automatic from dotsPulse toggle)
       setSlider('#dotSize', defaultParams.dotSize);
       setSlider('#dotGlow', defaultParams.dotGlow);
+      setSlider('#dotRipple', defaultParams.dotRipple);
       // ❌ REMOVED: dotReactivity slider (using unified params.reactivity)
       setCheckbox('#dotsPulse', defaultParams.dotsPulse);
 

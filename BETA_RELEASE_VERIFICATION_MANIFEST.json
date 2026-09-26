@@ -14,7 +14,7 @@
   "production": {
     "frameBodySha256": "e22efba8ebd98f4d8aa8bbd17e6ada36a4d030d49c2d2bc7cee066af981f5274",
     "mainThreadFallbackFileCount": 67,
-    "mainThreadFallbackSha256": "29ca42df945f4cc0689a5030272972db92c99045a10466f904874fd9d7f8d443",
+    "mainThreadFallbackSha256": "c659a8813d3842cb2ffc3a0afa028fbb063c894b5b60c65d0850573ffb9cb8ac",
     "coreParticleFallbackLineCount": 456,
     "coreParticleFallbackSha256": "806056b3a6ec805664e0fe051c86f8a19475496bca07798850666792b52a43ce"
   },

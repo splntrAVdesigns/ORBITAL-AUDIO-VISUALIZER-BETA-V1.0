@@ -18,7 +18,7 @@ function DotsControls() {
       </div>
       <div className="row control"><span className="label">Density</span><input id="density" type="range" min="0" max="1" step="0.01" defaultValue="0.25" /></div>
       <div className="row control"><span className="label">Dot Size</span><input id="dotSize" type="range" min="0.5" max="5.0" step="0.1" defaultValue="2.0" /></div>
-      <div className="row control"><span className="label">Dot Glow</span><input id="dotGlow" type="range" min="0" max="5.0" step="0.1" defaultValue="0.5" /></div>
+      <div className="row control"><span className="label">Dot Ripple</span><input id="dotRipple" type="range" min="0" max="1" step="0.01" defaultValue="0.35" /></div>
     </>
   );
 }

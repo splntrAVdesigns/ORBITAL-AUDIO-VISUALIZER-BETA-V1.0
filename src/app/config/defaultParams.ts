@@ -33,7 +33,9 @@ export const defaultParams = {
   glowCenter: false, glowStrength: 0.5, // Default 50% strength when enabled
   autoZoom: false,
   dotsPulse: false,
-  dotSize: 2.0, dotGlow: 1.0, // ✨ DEFAULT: Increased from 0.6 to 1.0 for better visibility
+  dotSize: 2.0, dotGlow: 1.0, // ✨ DEFAULT: Increased from 0.6 to 1.0 for better visibility. dotGlow is retired
+  // (Sprint G) -- kept only so old presets still load without error; the renderer no longer reads it.
+  dotRipple: 0.35, // Dot Ripple: traveling wave that bunches/spreads dots in packs, replaces Dot Glow
   hueSpeed: 1.0, // Motion FX enhancements
   // 🎯 NEW MOTION ARCHITECTURE - Auto-reactivity with visual effect controls
   motionIntensity: 0.40, // Motion amplitude multiplier (0-1, default 40% = Balanced with headroom)

@@ -240,6 +240,7 @@ export function createPresetActions(ctx: PresetActionsContext) {
       setSlider("#density", normalizeDotDensityForSlider(preset.dotsDensity));
       setSlider("#dotSize", preset.dotSize !== undefined ? preset.dotSize : 2.0);
       setSlider("#dotGlow", preset.dotGlow !== undefined ? preset.dotGlow : 0.3);
+      setSlider("#dotRipple", preset.dotRipple !== undefined ? preset.dotRipple : defaultParams.dotRipple);
       setSlider("#dotReactivity", preset.dotReactivity !== undefined ? preset.dotReactivity : 1.0);
       
       // 🔴 CRITICAL FIX: Motion FX - ALWAYS set values (use defaults if not in preset)
@@ -583,6 +584,7 @@ export function createPresetActions(ctx: PresetActionsContext) {
         dotsDensity: getSlider("#density"),
         dotSize: getSlider("#dotSize"),
         dotGlow: getSlider("#dotGlow"),
+        dotRipple: getSlider("#dotRipple"),
         dotReactivity: getSlider("#dotReactivity"),
         hueSpeed: getSlider("#hueSpeed"),
         fftSize: parseInt(getSlider("#fft").toString(), 10),
@@ -792,6 +794,7 @@ export function createPresetActions(ctx: PresetActionsContext) {
           dotsDensity: rand(0.08, 0.58),
           dotSize: rand(1.0, 2.45),
           dotGlow: rand(0.08, 0.88),
+          dotRipple: rand(0.1, 0.75),
           dotReactivity: rand(0.45, 1.35),
           autoZoom: chance(0.18),
           reactivity: rand(0.28, 0.82),
@@ -1425,6 +1428,7 @@ export function createPresetActions(ctx: PresetActionsContext) {
       updateSlider('#dotsPulse', defaultParams.dotsPulse);
       updateSlider('#dotSize', defaultParams.dotSize);
       updateSlider('#dotGlow', defaultParams.dotGlow);
+      updateSlider('#dotRipple', defaultParams.dotRipple);
       // ❌ REMOVED: dotReactivity slider (using unified params.reactivity)
       
       // Waveform

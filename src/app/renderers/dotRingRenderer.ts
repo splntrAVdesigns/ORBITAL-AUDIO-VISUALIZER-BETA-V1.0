@@ -65,6 +65,9 @@ export class DotRingRuntime {
   private readonly fadeLUT = new Float32Array(256);
   private organicFadeStrength = 0.0;
   private dotFadeWindowAngle = 0;
+  // Dot Ripple: a traveling wave phase (Sprint G). Separate from the Fade window
+  // above -- ripple bunches/spreads dot *spacing*, fade dims dot *brightness*.
+  private rippleWindowAngle = 0;
   private readonly dotFadeWindowWidth = Math.PI;
   private readonly colorCache = new Map<string, string>();
   private webglDots: WebGLDotRenderer | null = null;
@@ -91,6 +94,7 @@ export class DotRingRuntime {
     this.densityTransitionSwapped = false;
     this.organicFadeStrength = 0.0;
     this.dotFadeWindowAngle = 0;
+    this.rippleWindowAngle = 0;
     this.dotRPrev.fill(0);
     this.dotAPrev.fill(0);
     this.colorCache.clear();
@@ -195,6 +199,20 @@ export class DotRingRuntime {
       this.dotFadeWindowAngle = (this.dotFadeWindowAngle + angularSpeed * dt) % (Math.PI * 2);
     }
 
+    // Dot Ripple (Sprint G, replaces Dot Glow): a traveling wave nudges each
+    // dot's angle, bunching some together and spreading others apart in packs
+    // that circle the ring. Even spacing and dot count are untouched -- this
+    // only offsets where each already-placed dot draws, so it stays O(n) with
+    // no new per-dot state and no risk of dots visually swapping identity.
+    const rippleDepth = Math.max(0, Math.min(1, Number(params.dotRipple) || 0));
+    const rippleActive = rippleDepth > 0.01;
+    if (rippleActive) {
+      const rippleAngularSpeed = (bpmValue / 60.0) * 0.20 * Math.PI * 2;
+      this.rippleWindowAngle = (this.rippleWindowAngle + rippleAngularSpeed * dt) % (Math.PI * 2);
+    }
+    const rippleWaveCount = 3;
+    const rippleMaxOffset = rippleActive ? (TAU / Math.max(1, dots)) * 0.9 : 0;
+
     const dotsMidBassPulse = energy60_150;
     const dotsMidRangePulse = energy150_250;
     const energyBoost = (dotsMidBassPulse * 0.50 + dotsMidRangePulse * 0.70);
@@ -212,7 +230,12 @@ export class DotRingRuntime {
     // can trigger shadow blur work. Keep the look, but tier the blur down when the
     // organic dot fade is active or density is high.
     const dotGlowQuality = params.dotsPulse || dots > 96 ? 0.55 : 1.0;
-    const useDotGlow = params.dotGlow > 0.01 && dotGlowQuality > 0.01;
+    // Sprint G: Dot Glow retired. Its WebGL path inflated the same size attribute
+    // the dot's core circle uses, so at any depth it read as bigger dots, not a
+    // separate soft halo -- visually indistinguishable from Dot Size, for real
+    // per-frame cost. Forced off here; params.dotGlow itself is left untouched so
+    // old presets/saved states still load without error, they just no longer draw it.
+    const useDotGlow = false && params.dotGlow > 0.01 && dotGlowQuality > 0.01;
 
     if (useDotGlow) {
       ctx.save();
@@ -252,8 +275,11 @@ export class DotRingRuntime {
 
       const finalDotR = this.dotRPrev[i] * dotZoomMod;
       const dotSegmentOffset = chaosSegmentOffset(a, R0 * 0.075);
-      const x = Math.cos(a) * (finalDotR + dotSegmentOffset);
-      const y = Math.sin(a) * (finalDotR + dotSegmentOffset);
+      const rippleAngle = rippleActive
+        ? a + rippleDepth * rippleMaxOffset * Math.sin(rippleWaveCount * a - this.rippleWindowAngle)
+        : a;
+      const x = Math.cos(rippleAngle) * (finalDotR + dotSegmentOffset);
+      const y = Math.sin(rippleAngle) * (finalDotR + dotSegmentOffset);
 
       const baseHue = hueAt(a, effectiveHue);
       let localHue = baseHue;

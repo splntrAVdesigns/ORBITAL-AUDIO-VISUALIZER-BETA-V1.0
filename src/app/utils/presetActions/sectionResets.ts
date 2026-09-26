@@ -172,6 +172,7 @@ export function createSectionResets({ ctx, params, applyMacro, paletteLabel }: S
       updateControl('#density', normalizeDotDensityForSlider(defaultParams.dotsDensity));
       updateControl('#dotSize', defaultParams.dotSize);
       updateControl('#dotGlow', defaultParams.dotGlow);
+      updateControl('#dotRipple', defaultParams.dotRipple);
       // ❌ REMOVED: dotReactivity control (using unified params.reactivity)
     }
     

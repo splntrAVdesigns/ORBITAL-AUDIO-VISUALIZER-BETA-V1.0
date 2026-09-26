@@ -136,6 +136,7 @@ const numericConstraints: Partial<Record<RuntimeParameterKey, NumericConstraint>
   frequencyMix: { minimum: 0, maximum: 1 },
   spikeBloom: { minimum: 0, maximum: 1 },
   spikeVariety: { minimum: 0, maximum: 1 },
+  dotRipple: { minimum: 0, maximum: 1 },
   transientBoost: { minimum: 0, maximum: 1 },
   astralMorphAmount: { minimum: 0, maximum: 1 },
   astralMorphDamping: { minimum: 0, maximum: 1 },

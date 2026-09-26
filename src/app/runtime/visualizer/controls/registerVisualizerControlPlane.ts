@@ -284,6 +284,7 @@ export function registerVisualizerControlPlane(options: VisualizerControlPlaneOp
     // ❌ REMOVED: trail slider (fade is now automatic from dotsPulse toggle)
     bindThrottled("#dotSize", el => params.dotSize = parseFloat(el.value));
     bindThrottled("#dotGlow", el => params.dotGlow = parseFloat(el.value));
+    bindThrottled("#dotRipple", el => params.dotRipple = parseFloat(el.value));
     // ❌ REMOVED: dotReactivity slider (now using unified params.reactivity from ANIMATION section)
     bindThrottled("#hueSpeed", el => params.hueSpeed = parseFloat(el.value));
     bind("#density", el => {
