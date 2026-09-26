@@ -33,7 +33,7 @@ test('requested built-in preset tuning is exact and all Core Particle presets us
   const { presets, PRESET_VERSION } = await importBundledTypescript('src/app/data/presets.ts', context);
   const settings = name => presets.find(preset => preset.name === name)?.settings;
 
-  assert.equal(PRESET_VERSION, '13A.4-beta-preset-tuning');
+  assert.equal(PRESET_VERSION, '14K.2-beta-preset-refresh');
   assert.deepEqual(
     { fftSize: settings('Minimalscape').fftSize, mirror: settings('Minimalscape').mirror, chaos: settings('Minimalscape').chaos },
     { fftSize: 9, mirror: 0.23, chaos: 0 },

@@ -6,7 +6,7 @@
  * each preset has a clearer visual identity without maxing every expensive feature.
  */
 
-export const PRESET_VERSION = '13A.4-beta-preset-tuning';
+export const PRESET_VERSION = '14K.2-beta-preset-refresh';
 export const PRESET_COUNT = 20;
 
 export interface PresetSettings {
@@ -26,6 +26,8 @@ export interface PresetSettings {
   haloCometEnabled?: boolean;
   haloCometSpeed?: number;
   haloStrobeEnabled?: boolean;
+  rotationSyncMode?: 'free' | 'bpm' | 'quantized' | 'pingpong' | 'oscillator';
+  rotationQuantize?: '4/1' | '2/1' | '1/1' | '1/2' | '1/4';
   haloStrobeDivision?: string;
   haloCometDirection?: number;
   haloCometThickness?: number;
@@ -221,6 +223,8 @@ export const presets: Preset[] = [
   {
     name: 'Chill Lofi',
     settings: {
+      rotationQuantize: '4/1',
+      rotationSyncMode: 'oscillator',
       rotation: 0.06, mirror: 0.0, zoom: 0.95, halo: 0.62, bloom: 0.26,
       dotsOn: true, trail: 0.72, dotsDensity: 0.18, gamma: 0.05, iridize: 0.12, chaos: 0.0,
       glowCenter: true, glowStrength: 0.38, autoZoom: false, dotsPulse: true,
@@ -240,6 +244,8 @@ export const presets: Preset[] = [
   {
     name: 'Bass Earthquake',
     settings: {
+      rotationQuantize: '1/2',
+      rotationSyncMode: 'pingpong',
       rotation: 0.02, mirror: 0.0, zoom: 1.12, halo: 1.0, bloom: 0.68,
       dotsOn: true, trail: 0.22, dotsDensity: 0.22, gamma: 0.45, iridize: 0.05, chaos: 0.18,
       glowCenter: true, glowStrength: 0.88, autoZoom: true, dotsPulse: false,
@@ -259,13 +265,15 @@ export const presets: Preset[] = [
   {
     name: 'Electric Tempest',
     settings: {
+      rotationQuantize: '1/1',
+      rotationSyncMode: 'pingpong',
       rotation: 0.34, mirror: 0.0, zoom: 1.02, halo: 1.08, bloom: 0.78,
       dotsOn: true, trail: 0.26, dotsDensity: 0.42, gamma: 0.30, iridize: 0.00, chaos: 0.20,
       glowCenter: false, glowStrength: 0.55, autoZoom: false, dotsPulse: true,
       shockwave: false, shockwaveThreshold: 0.64, shockwaveRings: 3,
       dotSize: 1.7, dotGlow: 0.52, dotRipple: 0.71, dotReactivity: 1.1,
       hueSpeed: 0.75, zoomOsc: 0.0, fftSize: 10, reactivity: 0.62,
-      frequencySmoothing: true, autoRotateSpeed: 1, palette: 0,
+      frequencySmoothing: true, autoRotateSpeed: 1, palette: 30,
       spikeAttack: 0.54, spikeTightness: 0.78, spikeBloom: 0.45, spikeVariety: 0.80, transientBoost: 0.35,
       beatDetect: true, beatSensitivity: 0.64, beatPulseType: 'color', beatAccent: 1.15, effectAmount: 0.48, frequencyBand: 'mid',
       astralShaper: false, shapeOscillate: false,
@@ -278,6 +286,11 @@ export const presets: Preset[] = [
   {
     name: 'Neon Arcade',
     settings: {
+      beatSensitivity: 0.62,
+      effectAmount: 0.45,
+      beatPulseType: 'rainbow',
+      rotationQuantize: '1/1',
+      rotationSyncMode: 'quantized',
       rotation: 0.14, mirror: 0.0, zoom: 1.0, halo: 0.92, bloom: 0.62,
       dotsOn: true, trail: 0.42, dotsDensity: 0.30, gamma: 0.10, iridize: 0.30, chaos: 0.0,
       glowCenter: true, glowStrength: 0.60, autoZoom: false, dotsPulse: true,
@@ -286,7 +299,7 @@ export const presets: Preset[] = [
       hueSpeed: 0.55, zoomOsc: 0.0, fftSize: 10, reactivity: 0.54,
       frequencySmoothing: true, autoRotateSpeed: 1, palette: 4,
       spikeAttack: 0.42, spikeTightness: 0.64, spikeBloom: 0.65, spikeVariety: 0.55, transientBoost: 0.18,
-      beatDetect: false,
+      beatDetect: true,
       astralShaper: false, shapeOscillate: false,
       ...cleanCenter,
       centerImageColorGrade: 'cyberpunk', centerImageSaturation: 1.18,
@@ -298,6 +311,7 @@ export const presets: Preset[] = [
   {
     name: 'Hypnotic Trance',
     settings: {
+      rotationSyncMode: 'bpm',
       rotation: 0.10, mirror: 0.0, zoom: 1.04, halo: 0.78, bloom: 0.44,
       dotsOn: true, trail: 0.66, dotsDensity: 0.34, gamma: 0.12, iridize: 0.28, chaos: 0.0,
       glowCenter: true, glowStrength: 0.70, autoZoom: false, dotsPulse: true,
@@ -351,7 +365,7 @@ export const presets: Preset[] = [
       shockwave: false, shockwaveThreshold: 0.84, shockwaveRings: 2,
       dotSize: 1.15, dotGlow: 0.18, dotRipple: 0.23, dotReactivity: 0.42,
       hueSpeed: 0.08, zoomOsc: 0.0, fftSize: 9, reactivity: 0.30,
-      frequencySmoothing: true, autoRotateSpeed: 1, palette: 0,
+      frequencySmoothing: true, autoRotateSpeed: 1, palette: 8,
       spikeAttack: 0.26, spikeTightness: 0.34, spikeBloom: 0.08, spikeVariety: 0.12, transientBoost: 0.0,
       beatDetect: false, astralShaper: false, shapeOscillate: false,
       ...cleanCenter,
@@ -372,6 +386,8 @@ export const presets: Preset[] = [
   {
     name: 'Cinematic Epic',
     settings: {
+      rotationQuantize: '2/1',
+      rotationSyncMode: 'oscillator',
       rotation: 0.05, mirror: 0.0, zoom: 1.03, halo: 1.12, bloom: 0.76,
       dotsOn: true, trail: 0.46, dotsDensity: 0.16, gamma: 0.20, iridize: 0.15, chaos: 0.00,
       glowCenter: true, glowStrength: 0.72, autoZoom: false, dotsPulse: false,
@@ -392,6 +408,7 @@ export const presets: Preset[] = [
   {
     name: 'Retro Synthwave',
     settings: {
+      rotationSyncMode: 'bpm',
       rotation: 0.18, mirror: 0.15, zoom: 1.0, halo: 0.98, bloom: 0.64,
       dotsOn: true, trail: 0.52, dotsDensity: 0.10, gamma: 0.22, iridize: 0.38, chaos: 0.0,
       glowCenter: true, glowStrength: 0.62, autoZoom: false, dotsPulse: false,
@@ -412,6 +429,8 @@ export const presets: Preset[] = [
   {
     name: 'Glitch Matrix',
     settings: {
+      rotationQuantize: '1/4',
+      rotationSyncMode: 'quantized',
       rotation: 0.28, mirror: 0.0, zoom: 1.0, halo: 0.70, bloom: 0.44,
       dotsOn: true, trail: 0.30, dotsDensity: 0.32, gamma: 0.20, iridize: 0.00, chaos: 0.35,
       glowCenter: false, glowStrength: 0.42, autoZoom: false, dotsPulse: false,
@@ -442,16 +461,20 @@ export const presets: Preset[] = [
   {
     name: 'Blang it Out',
     settings: {
+      haloStrobeDivision: '1/4',
+      haloStrobeEnabled: true,
+      rotationQuantize: '1/2',
+      rotationSyncMode: 'quantized',
       rotation: 0.16, mirror: 0.0, zoom: 1.04, halo: 0.92, bloom: 0.58,
       dotsOn: true, trail: 0.36, dotsDensity: 0.45, gamma: 0.20, iridize: 0.00, chaos: 0.0,
       glowCenter: true, glowStrength: 0.76, autoZoom: true, dotsPulse: false,
-      shockwave: true, shockwaveThreshold: 0.56, shockwaveRings: 3,
+      shockwave: true, shockwaveThreshold: 0.50, shockwaveRings: 3,
       dotSize: 1.00, dotGlow: 0.56, dotRipple: 0.77, dotReactivity: 1.0,
       hueSpeed: 0.25, zoomOsc: 0.015, fftSize: 10, reactivity: 0.64,
       frequencySmoothing: true, autoRotateSpeed: 1, palette: 2,
-      spikeAttack: 0.48, spikeTightness: 0.66, spikeBloom: 0.50, spikeVariety: 0.60, transientBoost: 0.26,
+      spikeAttack: 0.48, spikeTightness: 0.66, spikeBloom: 0.62, spikeVariety: 0.50, transientBoost: 0.40,
       beatDetect: true, beatSensitivity: 0.66, beatPulseType: 'flash', // was 'spark' -- restore when SPARK_IMPACT_ENABLED returns
-       beatAccent: 1.20, effectAmount: 0.44, frequencyBand: 'full',
+       beatAccent: 1.20, effectAmount: 0.60, frequencyBand: 'full',
       astralShaper: false, shapeOscillate: false,
       ...cleanCenter,
       centerImageMotionType: 'cinematicPush', centerImageMotionAmount: 0.48, centerImageMotionIntensity: 0.34,
@@ -462,13 +485,14 @@ export const presets: Preset[] = [
   {
     name: 'Sacred Mandala',
     settings: {
+      rotationSyncMode: 'bpm',
       rotation: 0.35, mirror: 0.0, zoom: 0.96, halo: 0.62, bloom: 0.34,
       dotsOn: false, trail: 0.64, dotsDensity: 0.08, gamma: 0.16, iridize: 0.28, chaos: 0.0,
       glowCenter: false, glowStrength: 0.38, autoZoom: false, dotsPulse: false,
       shockwave: false, shockwaveThreshold: 0.82, shockwaveRings: 2,
       dotSize: 1.0, dotGlow: 0.18, dotRipple: 0.23, dotReactivity: 0.55,
       hueSpeed: 0.12, zoomOsc: 0.0, fftSize: 10, reactivity: 0.32,
-      frequencySmoothing: true, autoRotateSpeed: 1, palette: 3,
+      frequencySmoothing: true, autoRotateSpeed: 1, palette: 9,
       spikeAttack: 0.28, spikeTightness: 0.89, spikeBloom: 0.00, spikeVariety: 0.10, transientBoost: 0.0,
       beatDetect: false,
       astralShaper: true, astralShape: 'sg-flower-of-life', astralScale: 0.66, astralLineThickness: 0.85,
@@ -490,7 +514,7 @@ export const presets: Preset[] = [
       shockwave: false, shockwaveThreshold: 0.80, shockwaveRings: 3,
       dotSize: 1.25, dotGlow: 0.28, dotRipple: 0.37, dotReactivity: 0.70,
       hueSpeed: 0.22, zoomOsc: 0.0, fftSize: 10, reactivity: 0.38,
-      frequencySmoothing: true, autoRotateSpeed: 1, palette: 16,
+      frequencySmoothing: true, autoRotateSpeed: 1, palette: 28,
       spikeAttack: 0.32, spikeTightness: 0.48, spikeBloom: 0.18, spikeVariety: 0.25, transientBoost: 0.05,
       beatDetect: false,
       astralShaper: true, astralShape: 'sg-metatron-cube', astralScale: 0.72, astralLineThickness: 0.85,
@@ -506,6 +530,8 @@ export const presets: Preset[] = [
   {
     name: 'Fractal Dreams',
     settings: {
+      rotationQuantize: '1/1',
+      rotationSyncMode: 'oscillator',
       rotation: 0.06, mirror: 0.0, zoom: 1.02, halo: 0.30, bloom: 0.48,
       dotsOn: true, trail: 0.58, dotsDensity: 0.18, gamma: 0.50, iridize: 0.00, chaos: 0.00,
       glowCenter: true, glowStrength: 0.58, autoZoom: false, dotsPulse: true,
@@ -538,15 +564,20 @@ export const presets: Preset[] = [
   {
     name: 'Particle Storm',
     settings: {
+      beatSensitivity: 0.64,
+      effectAmount: 0.5,
+      beatPulseType: 'flash',
+      rotationQuantize: '2/1',
+      rotationSyncMode: 'pingpong',
       rotation: 0.20, mirror: 0.0, zoom: 1.0, halo: 0.82, bloom: 0.54,
       dotsOn: true, trail: 0.30, dotsDensity: 0.52, gamma: 0.34, iridize: 0.42, chaos: 0.0,
       glowCenter: false, glowStrength: 0.46, autoZoom: false, dotsPulse: false,
       shockwave: false, shockwaveThreshold: 0.78, shockwaveRings: 3,
       dotSize: 1.05, dotGlow: 0.52, dotRipple: 0.71, dotReactivity: 1.35,
       hueSpeed: 0.46, zoomOsc: 0.0, fftSize: 10, reactivity: 0.58,
-      frequencySmoothing: true, autoRotateSpeed: 1, palette: 0,
+      frequencySmoothing: true, autoRotateSpeed: 1, palette: 29,
       spikeAttack: 0.42, spikeTightness: 0.56, spikeBloom: 0.40, spikeVariety: 0.85, transientBoost: 0.22,
-      beatDetect: false, astralShaper: false,
+      beatDetect: true, astralShaper: false,
       shapeOscillate: true, shapeEdgeTrails: 0.72, shapeDistortion: 0.30, shapeTurbulence: 0.28, shapeOrbitDrift: 0.52, shapeDensity: 0.82,
       ...cleanCenter,
       centerImageVisible: false,
@@ -556,13 +587,15 @@ export const presets: Preset[] = [
   {
     name: 'Deep Bass Vision',
     settings: {
+      rotationQuantize: '2/1',
+      rotationSyncMode: 'quantized',
       rotation: 0.03, mirror: 0.0, zoom: 1.14, halo: 0.96, bloom: 0.62,
       dotsOn: true, trail: 0.24, dotsDensity: 0.20, gamma: 0.42, iridize: 0.16, chaos: 0.0,
       glowCenter: true, glowStrength: 0.82, autoZoom: false, dotsPulse: false,
       shockwave: true, shockwaveThreshold: 0.58, shockwaveRings: 3,
       dotSize: 1.85, dotGlow: 0.50, dotRipple: 0.68, dotReactivity: 1.25,
       hueSpeed: 0.18, zoomOsc: 0.035, fftSize: 9, reactivity: 0.74,
-      frequencySmoothing: true, beatReactivityBoost: true, autoRotateSpeed: 1, palette: 7,
+      frequencySmoothing: true, beatReactivityBoost: true, autoRotateSpeed: 1, palette: 14,
       spikeAttack: 0.62, spikeTightness: 0.82, spikeBloom: 0.60, spikeVariety: 0.40, transientBoost: 0.50,
       beatDetect: true, beatSensitivity: 0.60, beatPulseType: 'flash', beatAccent: 1.34, effectAmount: 0.52, frequencyBand: 'bass',
       astralShaper: false, shapeOscillate: false,
@@ -574,13 +607,14 @@ export const presets: Preset[] = [
   {
     name: 'Logo Spinner',
     settings: {
+      rotationSyncMode: 'bpm',
       rotation: 0.02, mirror: 0.0, zoom: 0.92, halo: 0.38, bloom: 0.28,
       dotsOn: true, trail: 0.66, dotsDensity: 0.12, gamma: 0.12, iridize: 0.22, chaos: 0.0,
       glowCenter: false, glowStrength: 0.28, autoZoom: false, dotsPulse: true,
       shockwave: false, shockwaveThreshold: 0.82, shockwaveRings: 2,
       dotSize: 1.35, dotGlow: 0.28, dotRipple: 0.37, dotReactivity: 0.70,
       hueSpeed: 0.24, zoomOsc: 0.0, fftSize: 10, reactivity: 0.42,
-      frequencySmoothing: true, autoRotateSpeed: 1, palette: 4,
+      frequencySmoothing: true, autoRotateSpeed: 1, palette: 6,
       spikeAttack: 0.30, spikeTightness: 0.42, spikeBloom: 0.12, spikeVariety: 0.18, transientBoost: 0.0,
       beatDetect: false, astralShaper: false, shapeOscillate: false,
       ...cleanCenter,
@@ -593,13 +627,15 @@ export const presets: Preset[] = [
   {
     name: 'Frequency Bloom',
     settings: {
+      rotationQuantize: '1/2',
+      rotationSyncMode: 'oscillator',
       rotation: 0.32, mirror: 0.0, zoom: 1.02, halo: 0.86, bloom: 0.58,
       dotsOn: true, trail: 0.24, dotsDensity: 0.40, gamma: 0.58, iridize: 0.74, chaos: 0.0,
       glowCenter: false, glowStrength: 0.46, autoZoom: false, dotsPulse: false,
       shockwave: false, shockwaveThreshold: 0.72, shockwaveRings: 3,
       dotSize: 1.48, dotGlow: 0.48, dotRipple: 0.65, dotReactivity: 1.45,
       hueSpeed: 0.76, zoomOsc: 0.024, fftSize: 12, reactivity: 0.78,
-      frequencySmoothing: true, beatReactivityBoost: true, autoRotateSpeed: 1, palette: 11,
+      frequencySmoothing: true, beatReactivityBoost: true, autoRotateSpeed: 1, palette: 37,
       spikeAttack: 0.58, spikeTightness: 0.78, spikeBloom: 0.70, spikeVariety: 0.65, transientBoost: 0.48,
       beatDetect: true, beatSensitivity: 0.72, beatPulseType: 'color', beatAccent: 1.28, effectAmount: 0.58, frequencyBand: 'full',
       astralShaper: false, shapeOscillate: false,
