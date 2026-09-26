@@ -93,6 +93,19 @@ export const defaultParams = {
   frequencyBand: 'full', // 'bass', 'mid', 'high', 'full'
   beatDetect: false, beatSensitivity: 0.65, beatPulseType: 'flash', effectAmount: 0.5, // effectAmount: 0-1 controls intensity of selected effect
   darkStrobeDepth: 0.65, // Black-flash opacity/depth (0-1)
+
+  // Star Field Tunnel (Beat Reactive Color FX > Star Field Tunnel), Sprint H.
+  starFieldCount: 450,
+  starFieldSpeed: 5,
+  starFieldSpread: 100,
+  starFieldSize: 6,
+  starFieldFocalDepth: 13,
+  starFieldTurbulence: 1,
+  starFieldGlitter: 3,
+  starFieldTrail: 88,
+  starFieldReverse: false,
+  starFieldBlendMode: 'lighter', // 'screen' | 'lighter' | 'source-over'
+  starFieldBeatSync: true,
   darkStrobeDisplacement: 0.35, // Horizontal tear/band displacement strength (0-1)
   // Motion Blur Trails - True Afterimage Effect
   motionBlurEnabled: false, // Enable/disable motion blur trails

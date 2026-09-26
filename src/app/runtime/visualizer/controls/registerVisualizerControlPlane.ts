@@ -447,6 +447,17 @@ export function registerVisualizerControlPlane(options: VisualizerControlPlaneOp
     bind("#effectAmount", el => commitRuntimeParameter('effectAmount', parseFloat(el.value)));
     bind("#darkStrobeDepth", el => commitRuntimeParameter('darkStrobeDepth', parseFloat(el.value)));
     bind("#darkStrobeDisplacement", el => commitRuntimeParameter('darkStrobeDisplacement', parseFloat(el.value)));
+    bind("#starFieldCount", el => commitRuntimeParameter('starFieldCount', parseFloat(el.value)));
+    bind("#starFieldSpeed", el => commitRuntimeParameter('starFieldSpeed', parseFloat(el.value)));
+    bind("#starFieldSpread", el => commitRuntimeParameter('starFieldSpread', parseFloat(el.value)));
+    bind("#starFieldSize", el => commitRuntimeParameter('starFieldSize', parseFloat(el.value)));
+    bind("#starFieldFocalDepth", el => commitRuntimeParameter('starFieldFocalDepth', parseFloat(el.value)));
+    bind("#starFieldTurbulence", el => commitRuntimeParameter('starFieldTurbulence', parseFloat(el.value)));
+    bind("#starFieldGlitter", el => commitRuntimeParameter('starFieldGlitter', parseFloat(el.value)));
+    bind("#starFieldTrail", el => commitRuntimeParameter('starFieldTrail', parseFloat(el.value)));
+    bind("#starFieldReverse", el => { params.starFieldReverse = el.checked; });
+    bind("#starFieldBeatSync", el => { params.starFieldBeatSync = el.checked; });
+    bind("#starFieldBlendMode", el => commitRuntimeParameter('starFieldBlendMode', el.value));
     bind("#beatPulseType", el => {
       commitRuntimeParameter('beatPulseType', el.value);
 
@@ -473,6 +484,11 @@ export function registerVisualizerControlPlane(options: VisualizerControlPlaneOp
       }
       if (darkStrobeDisplacementControl) {
         darkStrobeDisplacementControl.style.display = showDarkStrobeControls ? '' : 'none';
+      }
+      // Sprint H: Star Field Tunnel controls (not part of 'all' -- it's a full-canvas background).
+      const starFieldControls = document.getElementById('starFieldControls');
+      if (starFieldControls) {
+        starFieldControls.style.display = el.value === 'starfield' ? '' : 'none';
       }
     });
     // Motion Blur Trails bindings

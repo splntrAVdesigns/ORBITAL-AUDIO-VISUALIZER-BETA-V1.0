@@ -89,6 +89,17 @@ export function initializeVisualizerControlDefaults(
       setSlider('#haloCometSpeed', defaultParams.haloCometSpeed);
       setCheckbox('#haloStrobeEnabled', defaultParams.haloStrobeEnabled);
       setSlider('#haloStrobeDivision', defaultParams.haloStrobeDivision);
+      setSlider('#starFieldCount', defaultParams.starFieldCount);
+      setSlider('#starFieldSpeed', defaultParams.starFieldSpeed);
+      setSlider('#starFieldSpread', defaultParams.starFieldSpread);
+      setSlider('#starFieldSize', defaultParams.starFieldSize);
+      setSlider('#starFieldFocalDepth', defaultParams.starFieldFocalDepth);
+      setSlider('#starFieldTurbulence', defaultParams.starFieldTurbulence);
+      setSlider('#starFieldGlitter', defaultParams.starFieldGlitter);
+      setSlider('#starFieldTrail', defaultParams.starFieldTrail);
+      setSlider('#starFieldBlendMode', defaultParams.starFieldBlendMode);
+      setCheckbox('#starFieldReverse', defaultParams.starFieldReverse);
+      setCheckbox('#starFieldBeatSync', defaultParams.starFieldBeatSync);
       setSlider('#haloCometDirection', defaultParams.haloCometDirection);
       setSlider('#haloCometThickness', defaultParams.haloCometThickness);
       setSlider('#haloCometTailLength', defaultParams.haloCometTailLength);

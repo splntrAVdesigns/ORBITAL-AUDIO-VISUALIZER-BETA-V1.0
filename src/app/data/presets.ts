@@ -107,6 +107,17 @@ export interface PresetSettings {
   beatAccent?: number;
   effectAmount?: number;
   darkStrobeDepth?: number;
+  starFieldCount?: number;
+  starFieldSpeed?: number;
+  starFieldSpread?: number;
+  starFieldSize?: number;
+  starFieldFocalDepth?: number;
+  starFieldTurbulence?: number;
+  starFieldGlitter?: number;
+  starFieldTrail?: number;
+  starFieldReverse?: boolean;
+  starFieldBeatSync?: boolean;
+  starFieldBlendMode?: string;
   darkStrobeDisplacement?: number;
   frequencyBand?: string;
 

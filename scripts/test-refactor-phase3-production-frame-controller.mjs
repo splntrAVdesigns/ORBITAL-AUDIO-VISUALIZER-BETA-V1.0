@@ -66,7 +66,7 @@ const frameBody = extractFunction(controller, 'executeVisualFramePipeline');
 const frameHash = crypto.createHash('sha256').update(frameBody).digest('hex');
 const sessionLines = session.split(/\r?\n/).length;
 
-check('production frame body remains byte-identical', frameHash === 'e22efba8ebd98f4d8aa8bbd17e6ada36a4d030d49c2d2bc7cee066af981f5274', frameHash);
+check('production frame body remains byte-identical', frameHash === 'fe90378e0b3f3d6bc3535c31652ca79b81ce3290c769923da13bee9e8a5d0d35', frameHash);
 check('session entry point is reduced below the Phase 3 budget', sessionLines <= 800, `${sessionLines} lines`);
 check('session composes exactly one production frame controller', (session.match(/createVisualizerProductionFrameController\(/g) || []).length === 1);
 check('production frame implementation left the session entry point', !session.includes('function executeVisualFramePipeline('));

@@ -21,6 +21,7 @@ import { createProductionFrameRuntime } from './ProductionFrameRuntime';
 import { createProductionRuntimeDiagnostics } from '../diagnostics/ProductionRuntimeDiagnostics';
 import { createProductionPerformanceCertification } from '../diagnostics/ProductionPerformanceCertification';
 import { mainThreadUIRefreshBus } from '../pipeline/MainThreadUIRefreshBus';
+import { StarFieldTunnel, type StarFieldParams } from '../../../renderers/starFieldTunnel';
 import {
   resolveCoreParticleDiameterGain,
   resolveCoreParticleIntensity,
@@ -254,6 +255,9 @@ export function createVisualizerProductionFrameController(
     let lastT = performance.now(), angle = 0, frameCount = 0, fpsTimer = 0;
     const runtimeClock = new RuntimeClock();
     runtimeClock.start(lastT);
+    // Sprint H: Star Field Tunnel background (Beat Reactive Color FX > Star Field Tunnel).
+    const starFieldTunnel = new StarFieldTunnel();
+    sessionDisposer.add(() => starFieldTunnel.dispose());
     let latestBpmBarPhase = 0;
     const presetTransitionEngine = new PresetTransitionEngine(0.24);
     let lastEnergy = 1.0; // Default to 1.0 (Electric Blue end of gradient) instead of 0.0
@@ -790,6 +794,29 @@ export function createVisualizerProductionFrameController(
       phase7CanvasStart = measureFrameTimings ? performance.now() : 0;
       prepareRenderFrame(renderFrameState, runtimeTiming, DPR, W, H);
       renderPipeline.renderPass('clear-background', renderFrameState);
+
+      // Sprint H: Star Field Tunnel -- full-canvas background drawn directly
+      // after the clear so every other layer floats inside the tunnel.
+      if (params.beatDetect && params.beatPulseType === 'starfield') {
+        const sfEnergy = (energy40_500 * 0.9 + energy500_2000 + energy1600_8000 * 0.6) / 2.5;
+        starFieldTunnel.render(ctx, {
+          timeMs: t,
+          cssWidth: W,
+          cssHeight: H,
+          hue: hueFromPalette(Math.max(0, Math.min(1, sfEnergy || 0))),
+          intensity: params.effectAmount,
+          qualityScale: framePacingRuntime.snapshot.qualityScale,
+          params: params as unknown as StarFieldParams,
+          audio: {
+            energy: sfEnergy,
+            bass: energy40_500,
+            mid: energy500_2000,
+            beatPulse: colorState.beatPulse,
+          },
+        });
+      } else {
+        starFieldTunnel.markInactive();
+      }
 
       // 🎬 MOTION BLUR TRAILS - Pre-render (draw previous frame trails BEFORE current frame)
       if (params.motionBlurEnabled) {

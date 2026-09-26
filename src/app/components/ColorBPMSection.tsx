@@ -214,6 +214,7 @@ function ColorBPMSection({ collapsed, onToggleCollapse }: ColorBPMSectionProps) 
                 <option value="rainbow">Rainbow Canvas</option>
                 <option value="spark">Spark Impact</option>
                 <option value="dark-strobe">Dark Strobe</option>
+                <option value="starfield">Star Field Tunnel</option>
                 <option value="all">All Effects</option>
               </select>
             </div>
@@ -225,6 +226,56 @@ function ColorBPMSection({ collapsed, onToggleCollapse }: ColorBPMSectionProps) 
             <div className="row control" id="darkStrobeDisplacementControl" style={{ display: 'none' }}>
               <span className="label" style={{ fontSize: '11px' }}>Displacement</span>
               <input id="darkStrobeDisplacement" type="range" min="0" max="1" step="0.01" defaultValue="0.35" title="Adds horizontal black tear bands for sporadic glitch displacement." />
+            </div>
+
+            {/* Sprint H: Star Field Tunnel controls - only visible when Star Field Tunnel is selected. Effect Amount = brightness. */}
+            <div id="starFieldControls" style={{ display: 'none' }}>
+              <div className="row control">
+                <span className="label" style={{ fontSize: '11px' }}>Stars</span>
+                <input id="starFieldCount" type="range" min="150" max="900" step="10" defaultValue="450" />
+              </div>
+              <div className="row control">
+                <span className="label" style={{ fontSize: '11px' }}>Speed</span>
+                <input id="starFieldSpeed" type="range" min="0.5" max="15" step="0.1" defaultValue="5" />
+              </div>
+              <div className="row control">
+                <span className="label" style={{ fontSize: '11px' }}>Spread</span>
+                <input id="starFieldSpread" type="range" min="10" max="150" step="1" defaultValue="100" />
+              </div>
+              <div className="row control">
+                <span className="label" style={{ fontSize: '11px' }}>Star Size</span>
+                <input id="starFieldSize" type="range" min="0" max="20" step="0.5" defaultValue="6" />
+              </div>
+              <div className="row control">
+                <span className="label" style={{ fontSize: '11px' }}>Focal Depth</span>
+                <input id="starFieldFocalDepth" type="range" min="1" max="30" step="0.5" defaultValue="13" />
+              </div>
+              <div className="row control">
+                <span className="label" style={{ fontSize: '11px' }}>Turbulence</span>
+                <input id="starFieldTurbulence" type="range" min="0" max="10" step="0.1" defaultValue="1" />
+              </div>
+              <div className="row control">
+                <span className="label" style={{ fontSize: '11px' }}>Glitter</span>
+                <input id="starFieldGlitter" type="range" min="0" max="10" step="0.1" defaultValue="3" />
+              </div>
+              <div className="row control">
+                <span className="label" style={{ fontSize: '11px' }}>Trail</span>
+                <input id="starFieldTrail" type="range" min="0" max="100" step="1" defaultValue="88" />
+              </div>
+              <div className="row">
+                <span className="label" style={{ fontSize: '11px' }}>Reverse</span>
+                <label className="switch"><input id="starFieldReverse" type="checkbox" /><span className="thumb"></span></label>
+                <span className="label" style={{ fontSize: '11px', width: 'auto', marginLeft: '12px' }}>Beat Sync</span>
+                <label className="switch"><input id="starFieldBeatSync" type="checkbox" defaultChecked /><span className="thumb"></span></label>
+              </div>
+              <div className="row">
+                <span className="label" style={{ fontSize: '11px' }}>Blend Mode</span>
+                <select id="starFieldBlendMode" className="select" style={{ flex: 1 }} defaultValue="lighter">
+                  <option value="lighter">Lighter (hot glow)</option>
+                  <option value="screen">Screen (soft glow)</option>
+                  <option value="source-over">Normal (crisp)</option>
+                </select>
+              </div>
             </div>
             
             {/* Spark Impact Intensity Controls - Only visible when Spark Impact or All Effects selected */}

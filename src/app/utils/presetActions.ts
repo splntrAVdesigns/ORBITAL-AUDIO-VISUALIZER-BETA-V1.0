@@ -330,6 +330,17 @@ export function createPresetActions(ctx: PresetActionsContext) {
       setSlider("#effectAmount", (preset as any).effectAmount !== undefined ? (preset as any).effectAmount : 0.5);
       setSelect("#beatPulseType", (preset as any).beatPulseType !== undefined ? (preset as any).beatPulseType : 'flash');
       setSlider("#darkStrobeDepth", (preset as any).darkStrobeDepth !== undefined ? (preset as any).darkStrobeDepth : defaultParams.darkStrobeDepth);
+      setSlider("#starFieldCount", (preset as any).starFieldCount ?? defaultParams.starFieldCount);
+      setSlider("#starFieldSpeed", (preset as any).starFieldSpeed ?? defaultParams.starFieldSpeed);
+      setSlider("#starFieldSpread", (preset as any).starFieldSpread ?? defaultParams.starFieldSpread);
+      setSlider("#starFieldSize", (preset as any).starFieldSize ?? defaultParams.starFieldSize);
+      setSlider("#starFieldFocalDepth", (preset as any).starFieldFocalDepth ?? defaultParams.starFieldFocalDepth);
+      setSlider("#starFieldTurbulence", (preset as any).starFieldTurbulence ?? defaultParams.starFieldTurbulence);
+      setSlider("#starFieldGlitter", (preset as any).starFieldGlitter ?? defaultParams.starFieldGlitter);
+      setSlider("#starFieldTrail", (preset as any).starFieldTrail ?? defaultParams.starFieldTrail);
+      setSlider("#starFieldBlendMode", (preset as any).starFieldBlendMode ?? defaultParams.starFieldBlendMode);
+      setCheckbox("#starFieldReverse", (preset as any).starFieldReverse ?? defaultParams.starFieldReverse);
+      setCheckbox("#starFieldBeatSync", (preset as any).starFieldBeatSync ?? defaultParams.starFieldBeatSync);
       setSlider("#darkStrobeDisplacement", (preset as any).darkStrobeDisplacement !== undefined ? (preset as any).darkStrobeDisplacement : defaultParams.darkStrobeDisplacement);
       setSlider("#beatAccent", (preset as any).beatAccent !== undefined ? (preset as any).beatAccent : 1.0);
       setSelect("#frequencyBand", (preset as any).frequencyBand !== undefined ? (preset as any).frequencyBand : 'full');
@@ -607,6 +618,17 @@ export function createPresetActions(ctx: PresetActionsContext) {
         effectAmount: getSlider("#effectAmount"),
         beatPulseType: getSelect("#beatPulseType"),
         darkStrobeDepth: getSlider("#darkStrobeDepth"),
+        starFieldCount: getSlider("#starFieldCount"),
+        starFieldSpeed: getSlider("#starFieldSpeed"),
+        starFieldSpread: getSlider("#starFieldSpread"),
+        starFieldSize: getSlider("#starFieldSize"),
+        starFieldFocalDepth: getSlider("#starFieldFocalDepth"),
+        starFieldTurbulence: getSlider("#starFieldTurbulence"),
+        starFieldGlitter: getSlider("#starFieldGlitter"),
+        starFieldTrail: getSlider("#starFieldTrail"),
+        starFieldBlendMode: getSelect("#starFieldBlendMode"),
+        starFieldReverse: getCheckbox("#starFieldReverse"),
+        starFieldBeatSync: getCheckbox("#starFieldBeatSync"),
         darkStrobeDisplacement: getSlider("#darkStrobeDisplacement"),
         beatAccent: getSlider("#beatAccent"),
         frequencyBand: getSelect("#frequencyBand"),
@@ -1478,6 +1500,17 @@ export function createPresetActions(ctx: PresetActionsContext) {
       updateSlider('#beatPulseType', defaultParams.beatPulseType);
       updateSlider('#effectAmount', defaultParams.effectAmount);
       updateSlider('#darkStrobeDepth', defaultParams.darkStrobeDepth);
+      updateSlider('#starFieldCount', defaultParams.starFieldCount);
+      updateSlider('#starFieldSpeed', defaultParams.starFieldSpeed);
+      updateSlider('#starFieldSpread', defaultParams.starFieldSpread);
+      updateSlider('#starFieldSize', defaultParams.starFieldSize);
+      updateSlider('#starFieldFocalDepth', defaultParams.starFieldFocalDepth);
+      updateSlider('#starFieldTurbulence', defaultParams.starFieldTurbulence);
+      updateSlider('#starFieldGlitter', defaultParams.starFieldGlitter);
+      updateSlider('#starFieldTrail', defaultParams.starFieldTrail);
+      updateSlider('#starFieldBlendMode', defaultParams.starFieldBlendMode);
+      updateSlider('#starFieldReverse', defaultParams.starFieldReverse);
+      updateSlider('#starFieldBeatSync', defaultParams.starFieldBeatSync);
       updateSlider('#darkStrobeDisplacement', defaultParams.darkStrobeDisplacement);
       
       // TIER 1: Live Performance Features

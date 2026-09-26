@@ -62,6 +62,17 @@ export function createSectionResets({ ctx, params, applyMacro, paletteLabel }: S
       updateSlider('#beatPulseType', defaultParams.beatPulseType);
       updateSlider('#darkStrobeDepth', defaultParams.darkStrobeDepth);
       updateSlider('#darkStrobeDisplacement', defaultParams.darkStrobeDisplacement);
+      updateSlider('#starFieldCount', defaultParams.starFieldCount);
+      updateSlider('#starFieldSpeed', defaultParams.starFieldSpeed);
+      updateSlider('#starFieldSpread', defaultParams.starFieldSpread);
+      updateSlider('#starFieldSize', defaultParams.starFieldSize);
+      updateSlider('#starFieldFocalDepth', defaultParams.starFieldFocalDepth);
+      updateSlider('#starFieldTurbulence', defaultParams.starFieldTurbulence);
+      updateSlider('#starFieldGlitter', defaultParams.starFieldGlitter);
+      updateSlider('#starFieldTrail', defaultParams.starFieldTrail);
+      updateSlider('#starFieldReverse', defaultParams.starFieldReverse);
+      updateSlider('#starFieldBeatSync', defaultParams.starFieldBeatSync);
+      updateSlider('#starFieldBlendMode', defaultParams.starFieldBlendMode);
     }
     
     function resetRotationSync() {

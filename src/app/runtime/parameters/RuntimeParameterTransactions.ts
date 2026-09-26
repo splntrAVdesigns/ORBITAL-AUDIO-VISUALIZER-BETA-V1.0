@@ -121,6 +121,14 @@ const numericConstraints: Partial<Record<RuntimeParameterKey, NumericConstraint>
   beatSensitivity: { minimum: 0, maximum: 1 },
   effectAmount: { minimum: 0, maximum: 1 },
   darkStrobeDepth: { minimum: 0, maximum: 1 },
+  starFieldCount: { minimum: 150, maximum: 900 },
+  starFieldSpeed: { minimum: 0.5, maximum: 15 },
+  starFieldSpread: { minimum: 10, maximum: 150 },
+  starFieldSize: { minimum: 0, maximum: 20 },
+  starFieldFocalDepth: { minimum: 1, maximum: 30 },
+  starFieldTurbulence: { minimum: 0, maximum: 10 },
+  starFieldGlitter: { minimum: 0, maximum: 10 },
+  starFieldTrail: { minimum: 0, maximum: 100 },
   darkStrobeDisplacement: { minimum: 0, maximum: 1 },
   motionBlur: { minimum: 0, maximum: 1 },
   motionBlurPersistence: { minimum: 0, maximum: 1 },
@@ -162,7 +170,8 @@ const numericConstraints: Partial<Record<RuntimeParameterKey, NumericConstraint>
 
 const enumValues: Partial<Record<RuntimeParameterKey, readonly string[]>> = {
   reactivityMode: ['instant', 'smooth', 'hybrid', 'manual'],
-  beatPulseType: ['flash', 'color', 'rainbow', 'spark', 'dark-strobe', 'all'],
+  beatPulseType: ['flash', 'color', 'rainbow', 'spark', 'dark-strobe', 'starfield', 'all'],
+  starFieldBlendMode: ['screen', 'lighter', 'source-over'],
   coreParticlesShapeMode: ['dot', 'tri', 'dia', 'all'],
   centerImageColorGrade: [
     'none', 'warmSunset', 'coolCyberpunk', 'vintageFilm', 'neonDreams',
