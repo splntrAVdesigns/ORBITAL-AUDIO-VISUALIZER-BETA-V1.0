@@ -218,10 +218,11 @@ html,body{
   isolation: isolate;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  /* Sprint L2: reveal is owned by BootOverlay (LoadingPage.tsx), which sits above this
-     frame until real readiness is reached. The frame itself never animates opacity or
-     transform, so canvas measurement (CanvasViewportController) is stable from the
-     first frame instead of settling a moment later. */
+  /* Sprint L2 fix: #app-frame's opacity is now driven inline from App.tsx (boot.ready),
+     not left at a bare default — see the comment at its JSX for why: the live canvas
+     underneath the boot overlay was bleeding through the overlay's translucent brand
+     gradient before readiness completed. Still opacity-only, never transform, so
+     CanvasViewportController's clientWidth/clientHeight measurement stays stable. */
 }
 #frame-border-outer {
   position: absolute;

@@ -179,11 +179,28 @@ export function LoadingPage({ onComplete }: LoadingPageProps) {
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        background: 'radial-gradient(ellipse at center, rgba(30,144,255,0.15) 0%, rgba(0,0,0,0.95) 50%, #000 100%)',
+        // Sprint L2 fix: was a translucent radial-gradient (down to 15% alpha at
+        // center) that let the live canvas underneath bleed through before boot.ready
+        // — confirmed via screen recording. Solid black base now, with the same brand
+        // glow layered on top as a separate absolutely-positioned div below, so the
+        // look is unchanged but this overlay is fully opaque no matter what is
+        // mounted beneath it.
+        background: '#000',
         overflow: 'hidden',
         zIndex: 9999,
       }}
     >
+      {/* Decorative glow layer, kept separate from the opaque base above so opacity
+          can never be a bleed-through vector. */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: 'absolute',
+          inset: 0,
+          background: 'radial-gradient(ellipse at center, rgba(30,144,255,0.15) 0%, rgba(0,0,0,0.95) 50%, #000 100%)',
+          pointerEvents: 'none',
+        }}
+      />
       {/* Random floating particles */}
       {particles.map((p) => (
         <motion.div

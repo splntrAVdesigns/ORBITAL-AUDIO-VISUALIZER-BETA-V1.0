@@ -790,9 +790,22 @@ function AppContent() {
       )}
       
       {/* Removed duplicate panelToggle button - using only the middle handle for panel control */}
-      {/* Sprint L2: reveal is owned by BootOverlay (above); the frame itself no longer
-          animates opacity/transform, which is what kept canvas measurement stable. */}
-      <div id="app-frame">
+      {/* Sprint L2 fix: the app-frame must stay fully invisible (not just architecturally
+          "underneath") until boot.ready, or its live canvas bleeds through the boot
+          overlay's translucent brand gradient (confirmed via screen recording — visible
+          before the progress bar finished). opacity only (no transform/display/visibility
+          toggle) so layout stays measurable — CanvasViewportController keeps reading real
+          clientWidth/clientHeight the whole time, and every control is already synced and
+          the canvas already rendering by the time this fades in, so there is no late
+          shifting on reveal. pointerEvents blocks interaction with a still-invisible panel. */}
+      <div
+        id="app-frame"
+        style={{
+          opacity: boot.ready ? 1 : 0,
+          transition: 'opacity 0.5s ease',
+          pointerEvents: boot.ready ? 'auto' : 'none',
+        }}
+      >
         <div id="frame-border-outer">
           <div id="frame-border-inner">
             <div
