@@ -75,10 +75,23 @@ function generateParticles(width: number, height: number) {
 // never reads as a flicker; a same-tab reload (Landing → Launch again) has nothing new
 // to prove and dismisses the instant real readiness is reached.
 const MIN_BRAND_TIME_FIRST_SESSION_MS = 900;
+// The progress bar's own width fill (see its motion.div below) is a 0.3s tween.
+// BAR_FILL_SETTLE_MS is that duration plus a small margin, used as a deterministic
+// floor before dismissal — see the barSettled effect below for why this replaced an
+// onAnimationComplete-based approach.
+const BAR_FILL_SETTLE_MS = 350;
 
 export function LoadingPage({ onComplete }: LoadingPageProps) {
   const boot = useBootReadiness();
   const [minimumElapsed, setMinimumElapsed] = useState(() => isReturningSession());
+  // Sprint L2 fix: the progress bar's own width fill is an eased 0.3s tween (below),
+  // separate from boot.ready. Since every boot stage can resolve within the same
+  // tick, boot.ready and progress===100 became true in the same instant, but the bar
+  // hadn't visually finished animating to 100% yet — dismissal (and the overlay's own
+  // exit fade) used to fire immediately regardless, so the bar was cut off mid-fill.
+  // barSettled only becomes true once that tween's onAnimationComplete actually fires
+  // at 100%, so dismissal always waits for the bar to visibly finish first.
+  const [barSettled, setBarSettled] = useState(false);
   const [particles, setParticles] = useState<any[]>([]);
 
   useEffect(() => {
@@ -153,14 +166,29 @@ export function LoadingPage({ onComplete }: LoadingPageProps) {
     return () => window.clearTimeout(timer);
   }, [minimumElapsed]);
 
-  // Sprint L2: dismiss only once every real stage has completed AND (for a first
-  // visit) the minimum brand time has elapsed — never on a fixed timer alone.
+  // barSettled: deterministic, not callback-based. The previous version relied on
+  // the width tween's own onAnimationComplete firing — but framer-motion does not
+  // fire that callback for a tween that gets RETARGETED before it finishes, and this
+  // bar's target is retargeted once per boot stage (20/40/60/80/100%) as each
+  // resolves; only a truly uninterrupted final tween would have fired it reliably,
+  // which isn't guaranteed. A single timer started the moment boot.ready flips,
+  // sized to the bar's own known 0.3s duration plus margin, is simpler and
+  // guaranteed to run regardless of how framer-motion's internals behave.
   useEffect(() => {
-    if (boot.ready && minimumElapsed) {
+    if (!boot.ready || barSettled) return;
+    const timer = window.setTimeout(() => setBarSettled(true), BAR_FILL_SETTLE_MS);
+    return () => window.clearTimeout(timer);
+  }, [boot.ready, barSettled]);
+
+  // Sprint L2 fix: dismiss only once every real stage has completed, the minimum
+  // brand time (first visit only) has elapsed, AND the progress bar has visibly
+  // settled at 100% — never while its fill tween is still mid-animation.
+  useEffect(() => {
+    if (boot.ready && minimumElapsed && barSettled) {
       console.log('✅ Loading complete - transitioning to main app');
       onComplete();
     }
-  }, [boot.ready, minimumElapsed, onComplete]);
+  }, [boot.ready, minimumElapsed, barSettled, onComplete]);
 
   // Sprint L2: status text reflects the actual pending boot stage instead of an
   // unrelated fake message cycling on its own timer.

@@ -21,10 +21,11 @@ const ASYNC_OWNERSHIP = {
     classification: 'landing-only initialization and resize settlement',
   },
   'src/app/components/LoadingPage.tsx': {
-    // Sprint L2: the fake progress interval + fixed complete timer were replaced by
-    // real boot-readiness gating (see src/app/boot/bootReadiness.ts). Remaining
-    // timers: particle-dimension retry, resize debounce, first-session brand-time hold.
-    counts: { setTimeout: 3, setInterval: 0, requestAnimationFrame: 2 },
+    // Sprint L2 fix: added one more setTimeout — a bounded safety net (600ms) that
+    // only fires if the progress bar's own onAnimationComplete is ever missed, so
+    // dismissal can never hang indefinitely. Does not fire before the real signal
+    // would have arrived on its own.
+    counts: { setTimeout: 4, setInterval: 0, requestAnimationFrame: 2 },
     classification: 'loading-screen-only readiness gating and initialization',
   },
   'src/app/components/MidiConfigModal.tsx': {

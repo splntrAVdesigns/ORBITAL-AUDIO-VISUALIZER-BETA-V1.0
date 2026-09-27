@@ -252,6 +252,10 @@ function AppContent() {
   // Sprint L2: real, stage-driven readiness (see boot/bootReadiness.ts) — replaces the
   // fixed 360ms reveal timer that used to gate #app-frame's opacity.
   const boot = useBootReadiness();
+  // Sprint L2 fix: distinct from boot.ready — this only flips once LoadingPage's own
+  // onComplete fires (boot.ready AND its progress bar has visibly settled at 100%),
+  // so the loader is never dismissed while its own fill animation is still visible.
+  const [loaderDismissed, setLoaderDismissed] = useState(false);
 
   const {
     audioSectionCollapsed,
@@ -764,8 +768,14 @@ function AppContent() {
       )}
 
       <AnimatePresence>
-        {!boot.ready && (
-          <LoadingPage key="boot-overlay" onComplete={() => { /* dismissal is presence-driven, see AnimatePresence above */ }} />
+        {/* Sprint L2 fix: unmounting (and so the AnimatePresence exit fade) is driven
+            by LoadingPage's own onComplete — it only calls this once boot.ready AND
+            the progress bar has visibly settled at 100%, not the instant boot.ready
+            flips. #app-frame's own reveal (below) still starts exactly at boot.ready;
+            that's safe because the overlay stays fully opaque (see LoadingPage.tsx)
+            until this exit fade actually begins. */}
+        {!loaderDismissed && (
+          <LoadingPage key="boot-overlay" onComplete={() => setLoaderDismissed(true)} />
         )}
       </AnimatePresence>
 
