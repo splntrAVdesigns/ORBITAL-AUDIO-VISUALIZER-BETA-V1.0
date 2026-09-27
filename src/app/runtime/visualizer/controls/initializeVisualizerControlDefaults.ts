@@ -1,24 +1,25 @@
 import { defaultParams } from '../../../config/defaultParams';
 import { dotDensityCountToSlider } from '../../../config/parameterConversions';
-import type { RuntimeAsyncRegistry } from '../session/RuntimeAsyncRegistry';
+import type { SessionBootSequence } from '../session/SessionBootSequence';
 
 export interface VisualizerControlDefaultsOptions {
   params: Record<string, any>;
   query: (selector: string) => Element | null;
-  asyncRegistry: RuntimeAsyncRegistry;
+  bootSequence: SessionBootSequence;
 }
 
 /**
- * Schedules the initial DOM-to-runtime synchronization through the
- * session-owned async registry so unmount always cancels pending work.
+ * Registers the initial DOM-to-runtime synchronization as ordered session boot
+ * steps (Sprint L3). The boot sequence runs them once every bind() handler exists,
+ * and cancels them on unmount.
  */
 export function initializeVisualizerControlDefaults(
   options: VisualizerControlDefaultsOptions,
 ): void {
-  const { params, query, asyncRegistry } = options;
+  const { params, query, bootSequence } = options;
 
     // Initialize Phase 4 controls manually to ensure they sync with params
-    asyncRegistry.setTimeout(() => {
+    bootSequence.add('phase-controls', 10, () => {
       const zoomOscEl = query("#zoomOsc") as HTMLInputElement;
       const zoomOscSpeedEl = query("#zoomOscSpeed") as HTMLInputElement;
       const zoomRingsEl = query("#zoomRings") as HTMLInputElement;
@@ -26,7 +27,7 @@ export function initializeVisualizerControlDefaults(
       if (zoomOscEl) params.zoomOsc = parseFloat(zoomOscEl.value) || 0;
       if (zoomOscSpeedEl) params.zoomOscSpeed = parseFloat(zoomOscSpeedEl.value) || 1.0;
       if (zoomRingsEl) params.zoomRings = parseInt(zoomRingsEl.value, 10) || 12;
-    }, 100);
+    });
 
     // 🔥 INITIALIZATION: Set ALL UI elements to match defaultParams
     // This ensures the app honors the defaults on load
@@ -144,8 +145,8 @@ export function initializeVisualizerControlDefaults(
 
     };
 
-    // Call initialization after DOM is ready AND after bind() handlers are set up
-    // This ensures the events triggered by setSlider/setCheckbox will update params correctly
-    // 🚀 (Beta cleanup): tracked so cleanup can cancel it if it hasn't fired yet.
-    asyncRegistry.setTimeout(initializeUIFromDefaults, 300); // 300ms ensures bind() calls are all registered
+    // Runs after every bind() handler is registered, so the events triggered by
+    // setSlider/setCheckbox update params correctly. Sprint L3: ordered boot step
+    // instead of a 300 ms timer that could land after the app was revealed.
+    bootSequence.add('control-defaults', 30, initializeUIFromDefaults);
 }

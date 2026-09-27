@@ -3,6 +3,18 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="dark" />
+
+  <!-- Sprint L1: critical first-paint shell. Stylesheets arrive through the JS bundle,
+       so without this the browser paints its default white page until the app parses.
+       The #boot-shell background matches the landing page so the hand-off is seamless. -->
+  <style>
+    html, body { margin: 0; height: 100%; background: #000; color-scheme: dark; }
+    #boot-shell {
+      position: fixed; inset: 0;
+      background: radial-gradient(ellipse at center, rgba(30,144,255,0.15) 0%, rgba(0,0,0,0.95) 50%, #000 100%);
+    }
+  </style>
   
   <!-- Favicon -->
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -42,11 +54,13 @@
   <meta name="language" content="English" />
   <meta name="revisit-after" content="7 days" />
   
-  <!-- Pinned local GIF.js 0.2.0 bundle; no runtime third-party script dependency. -->
-  <script src="/vendor/gif.js"></script>
+  <!-- Pinned local GIF.js 0.2.0 bundle; no runtime third-party script dependency.
+       Sprint L1: async so it never blocks first paint. GIF export already waits for the
+       library through waitForGIFLibrary(). -->
+  <script async src="/vendor/gif.js"></script>
 </head>
 <body>
-  <div id="root"></div>
+  <div id="root"><div id="boot-shell" aria-hidden="true"></div></div>
   <script type="module" src="/src/main.tsx"></script>
 </body>
 </html>

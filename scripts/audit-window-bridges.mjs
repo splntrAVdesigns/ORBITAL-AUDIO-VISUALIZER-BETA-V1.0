@@ -34,7 +34,7 @@ const standardWindowMembers = new Set([
   'requestAnimationFrame', 'cancelAnimationFrame',
   'requestIdleCallback', 'cancelIdleCallback',
   'innerWidth', 'innerHeight', 'devicePixelRatio',
-  'location', 'localStorage', 'navigator', 'top', 'self',
+  'location', 'localStorage', 'sessionStorage', 'navigator', 'top', 'self',
   'matchMedia', 'AudioContext', 'webkitAudioContext',
 ]);
 

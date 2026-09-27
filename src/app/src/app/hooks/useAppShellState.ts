@@ -1,16 +1,17 @@
 import { useState } from 'react';
 import { safeLocalStorage } from '../../../utils/browserCompat';
+import { detectDeviceGate } from '../../../boot/deviceGate';
 
 export type AppViewState = 'landing' | 'loading' | 'main';
 
 export function useAppShellState() {
   const [appState, setAppState] = useState<AppViewState>('landing');
-  const [appReady, setAppReady] = useState(false);
   const [showCompatWarning, setShowCompatWarning] = useState(false);
   const [compatMissing, setCompatMissing] = useState<string[]>([]);
 
-  const [isMobileDevice, setIsMobileDevice] = useState(false);
-  const [isLandscapeOnly, setIsLandscapeOnly] = useState(false);
+  // Sprint L1: evaluated synchronously on first render (not in an effect) so a
+  // blocked device is caught before Landing ever paints a frame.
+  const [{ isMobileDevice, isLandscapeOnly }, setDeviceGate] = useState(detectDeviceGate);
   const [showIntroTutorial, setShowIntroTutorial] = useState(false);
 
   const [showKeyboardHelper, setShowKeyboardHelper] = useState(() => {
@@ -21,16 +22,13 @@ export function useAppShellState() {
   return {
     appState,
     setAppState,
-    appReady,
-    setAppReady,
     showCompatWarning,
     setShowCompatWarning,
     compatMissing,
     setCompatMissing,
     isMobileDevice,
-    setIsMobileDevice,
     isLandscapeOnly,
-    setIsLandscapeOnly,
+    setDeviceGate,
     showIntroTutorial,
     setShowIntroTutorial,
     showKeyboardHelper,

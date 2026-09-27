@@ -83,6 +83,10 @@ import { createKeyboardShortcutHandler } from './src/app/hooks/useKeyboardShortc
 import { presets, PRESET_VERSION, PRESET_COUNT } from './data/presets';
 import { Star, SkipBack, SkipForward, HelpCircle, ChevronDown, Settings } from 'lucide-react';
 import { LoadingPage } from './components/LoadingPage';
+import { AnimatePresence } from 'motion/react';
+import { useBootReadiness } from './hooks/useBootReadiness';
+import { resetBootReadiness, markBootStage } from './boot/bootReadiness';
+import { markOnboardingShownThisSession, setOnboardingOptedOut } from './hooks/useOrbitalAppLifecycle';
 import { AudioAmplifier } from './utils/audioProcessing';
 import { MacroKnob } from './components/MacroKnob';
 import { MobileBlocker } from './components/MobileBlocker';
@@ -233,21 +237,21 @@ function AppContent() {
   const {
     appState,
     setAppState,
-    appReady,
-    setAppReady,
     showCompatWarning,
     setShowCompatWarning,
     compatMissing,
     setCompatMissing,
     isMobileDevice,
-    setIsMobileDevice,
     isLandscapeOnly,
-    setIsLandscapeOnly,
+    setDeviceGate,
     showIntroTutorial,
     setShowIntroTutorial,
     showKeyboardHelper,
     setShowKeyboardHelper,
   } = useAppShellState();
+  // Sprint L2: real, stage-driven readiness (see boot/bootReadiness.ts) — replaces the
+  // fixed 360ms reveal timer that used to gate #app-frame's opacity.
+  const boot = useBootReadiness();
 
   const {
     audioSectionCollapsed,
@@ -364,10 +368,25 @@ function AppContent() {
 
   useOrbitalAppLifecycle({
     appState, isMobileDevice, isLandscapeOnly, isAudioPlaying, settingsPanelOpen,
-    playlist, monitorEnabled, autoAdvance, shuffleEnabled, setIsMobileDevice, setIsLandscapeOnly,
-    setShowIntroTutorial, setAutoAdvance, setShuffleEnabled, setAppReady, setSettingsPanelOpen,
+    playlist, monitorEnabled, autoAdvance, shuffleEnabled, setDeviceGate,
+    setShowIntroTutorial, setAutoAdvance, setShuffleEnabled, setSettingsPanelOpen,
     setCompatMissing, setShowCompatWarning,
   });
+
+  // Sprint L2: two of the five boot stages are owned here, at the shell level, rather
+  // than inside the runtime session — they aren't part of session setup/teardown.
+  useEffect(() => {
+    if (appState !== 'main') return;
+    // 'shell': the visualizer tree (canvas + panel) is mounted and committed.
+    markBootStage('shell');
+    // 'fonts': avoids a visible reflow if custom fonts land after first paint.
+    // document.fonts is unavailable in some embed contexts, so this degrades safely.
+    if (typeof document !== 'undefined' && 'fonts' in document) {
+      document.fonts.ready.then(() => markBootStage('fonts')).catch(() => markBootStage('fonts'));
+    } else {
+      markBootStage('fonts');
+    }
+  }, [appState]);
 
 
 
@@ -396,7 +415,11 @@ function AppContent() {
       alert('Audio initialization failed. Please try refreshing the page.');
       return;
     }
-    setAppState('loading');
+    // Sprint L2: go straight to 'main' — the loader is now an overlay driven by real
+    // readiness (boot/bootReadiness.ts), not a separate timed app state. Reset first
+    // so a relaunch in the same tab (Landing is always reachable) starts clean.
+    resetBootReadiness();
+    setAppState('main');
   };
 
   // 🔥 FIX 5: Apply pending macro changes (called on beat detection)
@@ -719,19 +742,17 @@ function AppContent() {
     return <LandscapePrompt />;
   }
 
-  // Handle landing and loading states
+  // Sprint L2: Landing is always shown on a fresh mount — its Launch button is the
+  // audio-unlock gesture browsers require, so there is no path that should skip it.
   if (appState === 'landing') {
     return <LandingPage onLaunch={handleLaunch} />;
   }
 
-  // Show loading screen (overlay during main app initialization)
-  const showLoadingScreen = appState === 'loading' || (appState === 'main' && !appReady);
-  
-  if (appState === 'loading') {
-    return <LoadingPage onComplete={() => setAppState('main')} />;
-  }
-
-  // Main visualizer app
+  // Main visualizer app. The canvas/panel tree mounts immediately on 'main' — no
+  // separate timed loading state — and BootOverlay sits above it as a fixed-position
+  // sibling until real readiness (boot.ready) is reached, then exit-fades via
+  // AnimatePresence. This is what lets the boot loader's duration track actual init
+  // work (shader compile, control sync, first frame) instead of a fixed timer.
   return (
     <>
       {/* Browser Compatibility Warning */}
@@ -741,10 +762,23 @@ function AppContent() {
           onClose={() => setShowCompatWarning(false)}
         />
       )}
-      
-      {/* Intro Tutorial Modal */}
-      {showIntroTutorial && (
-        <IntroTutorial onClose={() => setShowIntroTutorial(false)} />
+
+      <AnimatePresence>
+        {!boot.ready && (
+          <LoadingPage key="boot-overlay" onComplete={() => { /* dismissal is presence-driven, see AnimatePresence above */ }} />
+        )}
+      </AnimatePresence>
+
+      {/* Intro Tutorial Modal — waits for real readiness so it never appears over a
+          still-initializing frame. */}
+      {boot.ready && showIntroTutorial && (
+        <IntroTutorial
+          onClose={(optedOut) => {
+            markOnboardingShownThisSession();
+            if (optedOut) setOnboardingOptedOut();
+            setShowIntroTutorial(false);
+          }}
+        />
       )}
       
       {/* Keyboard Helper Overlay */}
@@ -756,7 +790,9 @@ function AppContent() {
       )}
       
       {/* Removed duplicate panelToggle button - using only the middle handle for panel control */}
-      <div id="app-frame" className="app-fade-in" style={{ opacity: appReady ? 1 : 0, transition: 'opacity 0.6s ease-in-out' }}>
+      {/* Sprint L2: reveal is owned by BootOverlay (above); the frame itself no longer
+          animates opacity/transform, which is what kept canvas measurement stable. */}
+      <div id="app-frame">
         <div id="frame-border-outer">
           <div id="frame-border-inner">
             <div

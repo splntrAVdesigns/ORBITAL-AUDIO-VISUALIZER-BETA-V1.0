@@ -91,13 +91,19 @@ export function SettingsPanel({
         style={{
           width: '350px',
           maxWidth: '100vw',
-          background: 'linear-gradient(180deg, rgba(40,44,52,.98) 0%, rgba(35,38,45,.98) 100%)',
+          // Sprint L5: matched to the control panel's own shell tone (--orbital-panel-shell,
+          // #333333) instead of the previous bluish gradient, so the two panels read as one
+          // design system instead of two.
+          background: 'var(--orbital-panel-shell, #333333)',
           borderLeft: '1px solid rgba(30,144,255,0.3)',
           padding: 0,
           display: 'flex',
           flexDirection: 'column',
           height: '100vh',
-          overflowY: 'auto'
+          // Sprint L5: the Sheet root is a layout container only now — the inner
+          // "Scrollable Content" div below is the sole scroll owner (was previously
+          // scrolling here too, producing a visible double scrollbar).
+          overflow: 'hidden'
         }}
       >
         {/* Header */}
@@ -152,10 +158,11 @@ export function SettingsPanel({
           </div>
         </SheetHeader>
 
-        {/* Scrollable Content */}
-        <div style={{
+        {/* Scrollable Content — Sprint L5: sole scroll owner in this panel, reusing the
+            same dark scrollbar treatment (.panel-scrollable) as the main control panel's
+            parameter list, instead of its own lighter custom scrollbar style block. */}
+        <div className="panel-scrollable" style={{
           flex: 1,
-          overflowY: 'auto',
           overflowX: 'hidden'
         }}>
           <section style={{ padding: '16px', borderBottom: '1px solid rgba(30,144,255,0.18)' }}>
@@ -324,7 +331,7 @@ export function SettingsPanel({
               />
               <DescriptionItem
                 title="Liquid Shaper"
-                description="WebGL-powered sacred geometry engine with 40+ patterns including Flower of Life, Sri Yantra, and Metatron's Cube"
+                description="WebGL-powered sacred geometry engine with 60+ patterns including Flower of Life, Sri Yantra, and Metatron's Cube, with a curated 20-shape auto-cycle"
               />
               <DescriptionItem
                 title="Core Particles"
@@ -364,22 +371,6 @@ export function SettingsPanel({
           </div>
         </div>
 
-        {/* Custom Scrollbar Styles */}
-        <style dangerouslySetInnerHTML={{__html: `
-          .settings-panel-content::-webkit-scrollbar {
-            width: 8px;
-          }
-          .settings-panel-content::-webkit-scrollbar-track {
-            background: rgba(0,0,0,0.2);
-          }
-          .settings-panel-content::-webkit-scrollbar-thumb {
-            background: rgba(30,144,255,0.3);
-            border-radius: 4px;
-          }
-          .settings-panel-content::-webkit-scrollbar-thumb:hover {
-            background: rgba(30,144,255,0.5);
-          }
-        `}} />
       </SheetContent>
     </Sheet>
   );

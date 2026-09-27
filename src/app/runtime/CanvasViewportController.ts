@@ -64,9 +64,17 @@ export class CanvasViewportController {
   }
 
   private measure(): ViewportState {
-    const rect = this.stage.getBoundingClientRect();
-    const cssWidth = Math.max(1, rect.width || this.lastW || 1);
-    const cssHeight = Math.max(1, rect.height || this.lastH || 1);
+    // Sprint L3: layout size, not painted size. getBoundingClientRect() includes
+    // ancestor CSS transforms, so any scale animation on the app shell (the old
+    // fadeInApp 0.98→1 entrance) produced an off-size canvas and an off-centre ring
+    // that only corrected on a later resize. ResizeObserver never fires for transform
+    // changes, so the bad measurement stuck. clientWidth/clientHeight are transform-
+    // independent; the rect remains a fallback for elements without a layout box.
+    const layoutWidth = this.stage.clientWidth;
+    const layoutHeight = this.stage.clientHeight;
+    const rect = layoutWidth > 0 && layoutHeight > 0 ? null : this.stage.getBoundingClientRect();
+    const cssWidth = Math.max(1, layoutWidth || rect?.width || this.lastW || 1);
+    const cssHeight = Math.max(1, layoutHeight || rect?.height || this.lastH || 1);
     const rawDpr = Math.max(window.devicePixelRatio || 1, 1);
     const scale = resolveAdaptiveRenderScale({
       cssWidth,

@@ -2,6 +2,9 @@ import { motion } from 'motion/react';
 import { useEffect, useState } from 'react';
 
 import { iconLogo, orbitalLogo, recoverBuiltInAssetImage } from '../config/assets';
+import { useBootReadiness } from '../hooks/useBootReadiness';
+import { BOOT_STAGE_LABELS } from '../boot/bootReadiness';
+import { isReturningSession } from '../boot/sessionBoot';
 
 interface LoadingPageProps {
   onComplete: () => void;
@@ -68,9 +71,14 @@ function generateParticles(width: number, height: number) {
   });
 }
 
+// Sprint L2: first-visit sessions hold the brand moment for a minimum stretch so it
+// never reads as a flicker; a same-tab reload (Landing → Launch again) has nothing new
+// to prove and dismisses the instant real readiness is reached.
+const MIN_BRAND_TIME_FIRST_SESSION_MS = 900;
+
 export function LoadingPage({ onComplete }: LoadingPageProps) {
-  const [progress, setProgress] = useState(0);
-  const [messageIndex, setMessageIndex] = useState(0);
+  const boot = useBootReadiness();
+  const [minimumElapsed, setMinimumElapsed] = useState(() => isReturningSession());
   const [particles, setParticles] = useState<any[]>([]);
 
   useEffect(() => {
@@ -140,48 +148,24 @@ export function LoadingPage({ onComplete }: LoadingPageProps) {
   }, []);
 
   useEffect(() => {
-    // Simulate loading progress
-    const progressInterval = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(progressInterval);
-          return 100;
-        }
-        return prev + 2.5; // Faster progress (reaches 100% in ~2.4s)
-      });
-    }, 60);
+    if (minimumElapsed) return;
+    const timer = window.setTimeout(() => setMinimumElapsed(true), MIN_BRAND_TIME_FIRST_SESSION_MS);
+    return () => window.clearTimeout(timer);
+  }, [minimumElapsed]);
 
-    // Update messages every 600ms (faster than before)
-    const messageInterval = setInterval(() => {
-      setMessageIndex((prev) => {
-        if (prev >= loadingMessages.length - 1) {
-          clearInterval(messageInterval);
-          return prev;
-        }
-        return prev + 1;
-      });
-    }, 600);
-
-    // Complete loading after 2.5 seconds
-    const completeTimer = setTimeout(() => {
+  // Sprint L2: dismiss only once every real stage has completed AND (for a first
+  // visit) the minimum brand time has elapsed — never on a fixed timer alone.
+  useEffect(() => {
+    if (boot.ready && minimumElapsed) {
       console.log('✅ Loading complete - transitioning to main app');
       onComplete();
-    }, 2500);
+    }
+  }, [boot.ready, minimumElapsed, onComplete]);
 
-    return () => {
-      clearInterval(progressInterval);
-      clearInterval(messageInterval);
-      clearTimeout(completeTimer);
-    };
-  }, [onComplete]);
-
-  const loadingMessages = [
-    'Initializing Audio Engine...',
-    'Loading Visualizer...',
-    'Calibrating Frequency Bands...',
-    'Preparing Effects...',
-    'Launching...',
-  ];
+  // Sprint L2: status text reflects the actual pending boot stage instead of an
+  // unrelated fake message cycling on its own timer.
+  const statusMessage = boot.pending ? BOOT_STAGE_LABELS[boot.pending] + '…' : 'Ready';
+  const progress = Math.round(boot.progress * 100);
 
   return (
     <motion.div
@@ -311,32 +295,24 @@ export function LoadingPage({ onComplete }: LoadingPageProps) {
           />
         </div>
 
-        {/* Loading Messages */}
+        {/* Loading Status */}
         <div style={{ height: '24px', position: 'relative' }}>
-          {loadingMessages.map((message, idx) => (
-            <motion.div
-              key={idx}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{
-                opacity: idx === messageIndex ? 1 : 0,
-                y: idx === messageIndex ? 0 : 10,
-              }}
-              transition={{ duration: 0.4 }}
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: '50%',
-                transform: 'translateX(-50%)',
-                fontSize: '13px',
-                color: '#7a94aa',
-                letterSpacing: '0.05em',
-                fontWeight: '500',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {message}
-            </motion.div>
-          ))}
+          <motion.div
+            key={statusMessage}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            style={{
+              fontSize: '13px',
+              color: '#7a94aa',
+              letterSpacing: '0.05em',
+              fontWeight: '500',
+              whiteSpace: 'nowrap',
+              textAlign: 'center',
+            }}
+          >
+            {statusMessage}
+          </motion.div>
         </div>
       </div>
     </motion.div>

@@ -5,11 +5,13 @@ import { orbitalLogo, recoverBuiltInAssetImage } from '../config/assets';
 import { safeLocalStorage } from '../utils/browserCompat';
 
 interface IntroTutorialProps {
-  onClose: () => void;
+  /** optedOut is true when the user explicitly checked "Don't show this again". */
+  onClose: (optedOut: boolean) => void;
 }
 
 export function IntroTutorial({ onClose }: IntroTutorialProps) {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [dontShowAgain, setDontShowAgain] = useState(false);
   const totalSlides = 5;
 
   // Handle keyboard navigation
@@ -28,8 +30,11 @@ export function IntroTutorial({ onClose }: IntroTutorialProps) {
   }, [currentSlide]);
 
   const handleSkip = () => {
+    // Sprint L4: the legacy permanent flag is no longer read by the lifecycle hook
+    // (see useOrbitalAppLifecycle.ts) but is still written for anyone inspecting
+    // localStorage directly, and as a harmless legacy marker.
     safeLocalStorage.setItem('orbital-intro-completed', 'true');
-    onClose();
+    onClose(dontShowAgain);
   };
 
   const handleNext = () => {
@@ -390,29 +395,51 @@ export function IntroTutorial({ onClose }: IntroTutorialProps) {
             Back
           </button>
 
-          {/* Skip Button */}
-          <button
-            onClick={handleSkip}
-            style={{
-              padding: '0.75rem 1rem',
-              background: 'transparent',
-              border: 'none',
-              color: '#7a94aa',
-              fontSize: '0.85rem',
-              fontWeight: '500',
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-              textDecoration: 'underline',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.color = '#94afc4';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.color = '#7a94aa';
-            }}
-          >
-            Skip Tutorial
-          </button>
+          {/* Skip Button + "don't show again" (Sprint L4: onboarding otherwise
+              re-appears every new session by design — see useOrbitalAppLifecycle.ts) */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem' }}>
+            <button
+              onClick={handleSkip}
+              style={{
+                padding: '0.75rem 1rem',
+                background: 'transparent',
+                border: 'none',
+                color: '#7a94aa',
+                fontSize: '0.85rem',
+                fontWeight: '500',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                textDecoration: 'underline',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = '#94afc4';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = '#7a94aa';
+              }}
+            >
+              Skip Tutorial
+            </button>
+            <label
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.4rem',
+                fontSize: '0.72rem',
+                color: '#5f7690',
+                cursor: 'pointer',
+                userSelect: 'none',
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={dontShowAgain}
+                onChange={(e) => setDontShowAgain(e.target.checked)}
+                style={{ accentColor: '#1E90FF', width: '12px', height: '12px' }}
+              />
+              Don't show this again
+            </label>
+          </div>
 
           {/* Next/Get Started Button */}
           <button

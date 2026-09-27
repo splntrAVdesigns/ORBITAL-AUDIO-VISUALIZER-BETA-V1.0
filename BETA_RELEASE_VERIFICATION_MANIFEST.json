@@ -14,7 +14,7 @@
   "production": {
     "frameBodySha256": "fe90378e0b3f3d6bc3535c31652ca79b81ce3290c769923da13bee9e8a5d0d35",
     "mainThreadFallbackFileCount": 68,
-    "mainThreadFallbackSha256": "613dbd280e933386a01769ecc36ac7381339d98c7d4e49be3dd6d61fd91c5b8d",
+    "mainThreadFallbackSha256": "cc9ea0779668299ccb2646c68070dc1f11e62f2715223fbbe6001bb1aa4f8691",
     "coreParticleFallbackLineCount": 456,
     "coreParticleFallbackSha256": "806056b3a6ec805664e0fe051c86f8a19475496bca07798850666792b52a43ce"
   },
@@ -23,7 +23,7 @@
     "package-lock.json": "fa133c06f907e4e42cdc29415be4ab3485c748cc188f1c20dd567fcb96db84f2",
     "public/vendor/gif.js": "07aee23742523e6a154ac9c758903cd29cb7f5975c9b13f9146eaf591a01b56c",
     "public/vendor/gif.worker.js": "33ce40455c96e6a8e54845177e3dfa61c21b36941d060e35a5715f42fe7fef59",
-    "index.html": "541b9da087387323cd6dbb61b8d4d5335eda5b20cc275a8b1015344349bbdc75",
+    "index.html": "4973b2e7e56ed19d0c670a0fac391ba9c58691ddb75316539a651d7583f9777e",
     "vercel.json": "4de7027249427cc35ff2e784611d4a0e88e39bc512da4d57336c8f0fedcf3c45",
     ".gitignore": "b1e75c2b833edba757b82bb7dceda30a459ce776353724e557b4292faa2758c6",
     ".nvmrc": "8fb7215a78fb2dacb282d6fca135a48bd69892ad6560efa3c5a9c12b0200ac7c"

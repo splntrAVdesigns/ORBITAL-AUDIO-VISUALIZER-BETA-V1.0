@@ -14,7 +14,7 @@ import type { AutoCycleSpeed, ShapeType, StrokeStyle } from '../../../utils/astr
 import type { LiquidShaperFeatureRuntime } from '../features/LiquidShaperFeatureRuntime';
 import type { SpikeFeatureRuntime } from '../features/SpikeFeatureRuntime';
 import type { ProductionMotionStateRuntime } from '../motion/ProductionMotionStateRuntime';
-import type { RuntimeAsyncRegistry } from '../session/RuntimeAsyncRegistry';
+import type { SessionBootSequence } from '../session/SessionBootSequence';
 import type { RuntimeEventRegistry } from '../session/RuntimeEventRegistry';
 import type { RuntimeSessionDisposer } from '../session/RuntimeSessionDisposer';
 import type { RuntimeParameterKey } from '../../parameters/RuntimeParameterTransactions';
@@ -78,7 +78,7 @@ export interface VisualizerControlPlaneOptions {
   recalculateRotationSpeed: () => void;
   getAngle: () => number;
   query: (selector: string) => Element | null;
-  asyncRegistry: RuntimeAsyncRegistry;
+  bootSequence: SessionBootSequence;
   eventRegistry: RuntimeEventRegistry;
   sessionDisposer: RuntimeSessionDisposer;
   debugGeneral: boolean;
@@ -120,7 +120,7 @@ export function registerVisualizerControlPlane(options: VisualizerControlPlaneOp
     recalculateRotationSpeed,
     getAngle,
     query,
-    asyncRegistry,
+    bootSequence,
     eventRegistry,
     sessionDisposer,
     debugGeneral,
@@ -755,7 +755,7 @@ export function registerVisualizerControlPlane(options: VisualizerControlPlaneOp
     initializeVisualizerControlDefaults({
       params,
       query,
-      asyncRegistry,
+      bootSequence,
     });
 
 }

@@ -218,8 +218,10 @@ html,body{
   isolation: isolate;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  opacity: 0; /* Start hidden for smooth transition */
-  transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  /* Sprint L2: reveal is owned by BootOverlay (LoadingPage.tsx), which sits above this
+     frame until real readiness is reached. The frame itself never animates opacity or
+     transform, so canvas measurement (CanvasViewportController) is stable from the
+     first frame instead of settling a moment later. */
 }
 #frame-border-outer {
   position: absolute;
@@ -950,20 +952,8 @@ html:-webkit-full-screen #frame-border-inner {
 }
 
 /* Smooth app load animation */
-@keyframes fadeInApp {
-  from {
-    opacity: 0;
-    transform: scale(0.98);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-.app-fade-in {
-  animation: fadeInApp 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-}
+/* Sprint L2: fadeInApp keyframe + .app-fade-in removed — its scale(0.98→1) transform
+   distorted canvas measurement during boot and overrode the readiness-gated reveal. */
 
 /* TIER 1: Macro Visual Feedback - REMOVED (no more blinking) */
 

@@ -21,8 +21,11 @@ const ASYNC_OWNERSHIP = {
     classification: 'landing-only initialization and resize settlement',
   },
   'src/app/components/LoadingPage.tsx': {
-    counts: { setTimeout: 3, setInterval: 2, requestAnimationFrame: 2 },
-    classification: 'loading-screen-only progress and initialization',
+    // Sprint L2: the fake progress interval + fixed complete timer were replaced by
+    // real boot-readiness gating (see src/app/boot/bootReadiness.ts). Remaining
+    // timers: particle-dimension retry, resize debounce, first-session brand-time hold.
+    counts: { setTimeout: 3, setInterval: 0, requestAnimationFrame: 2 },
+    classification: 'loading-screen-only readiness gating and initialization',
   },
   'src/app/components/MidiConfigModal.tsx': {
     counts: { setTimeout: 0, setInterval: 1, requestAnimationFrame: 0 },
@@ -60,10 +63,9 @@ const ASYNC_OWNERSHIP = {
     counts: { setTimeout: 1, setInterval: 0, requestAnimationFrame: 0 },
     classification: 'bounded WebGL cleanup fallback',
   },
-  'src/app/hooks/useOrbitalAppLifecycle.ts': {
-    counts: { setTimeout: 1, setInterval: 0, requestAnimationFrame: 0 },
-    classification: 'React app-ready timer with effect cleanup',
-  },
+  // Sprint L2/L3: useOrbitalAppLifecycle.ts no longer owns a reveal timer — boot
+  // readiness is driven by real stages (see src/app/boot/bootReadiness.ts) and
+  // ordered session boot steps (SessionBootSequence), not a fixed setTimeout.
   'src/app/hooks/usePresetKeyboardNavigation.ts': {
     counts: { setTimeout: 1, setInterval: 0, requestAnimationFrame: 0 },
     classification: 'owned latest-preset commit debounce with hook cleanup; toast timer removed',
@@ -92,18 +94,16 @@ const ASYNC_OWNERSHIP = {
     counts: { setTimeout: 1, setInterval: 0, requestAnimationFrame: 1 },
     classification: 'ONLY_CONTINUOUS_VISUAL_RAF plus bounded crash recovery',
   },
-  'src/app/runtime/visualizer/createVisualizerRuntimeSession.ts': {
-    counts: { setTimeout: 2, setInterval: 0, requestAnimationFrame: 0 },
-    classification: 'RuntimeAsyncRegistry-owned session setup timeouts outside extracted control/interaction setup',
-  },
+  // Sprint L3: createVisualizerRuntimeSession.ts's two setup timeouts were
+  // converted to ordered SessionBootSequence steps (see runtime/visualizer/session/
+  // SessionBootSequence.ts) so start-up runs in one deterministic pass instead of
+  // racing on 100/350ms magic numbers.
   'src/app/runtime/visualizer/frame/createVisualizerProductionFrameController.ts': {
     counts: { setTimeout: 1, setInterval: 0, requestAnimationFrame: 0 },
     classification: 'relocated RuntimeAsyncRegistry-owned DOM cache initialization timeout; no independent scheduler',
   },
-  'src/app/runtime/visualizer/controls/initializeVisualizerControlDefaults.ts': {
-    counts: { setTimeout: 2, setInterval: 0, requestAnimationFrame: 0 },
-    classification: 'RuntimeAsyncRegistry-owned default and phase-control initialization',
-  },
+  // Sprint L3: initializeVisualizerControlDefaults.ts now registers ordered
+  // SessionBootSequence steps instead of owning setTimeout calls directly.
   'src/app/runtime/visualizer/setup/createSessionInteractionSetup.ts': {
     counts: { setTimeout: 1, setInterval: 0, requestAnimationFrame: 0 },
     classification: 'RuntimeAsyncRegistry-owned snap-to-grid feedback timeout',

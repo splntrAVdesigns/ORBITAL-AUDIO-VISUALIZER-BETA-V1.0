@@ -15,6 +15,7 @@ import { registerVisualizerControlPlane } from './controls/registerVisualizerCon
 import { createVisualizerFeatureSession } from './session/createVisualizerFeatureSession';
 import { createVisualizerFrameServices } from './setup/createVisualizerFrameServices';
 import { createVisualizerProductionFrameController } from './frame/createVisualizerProductionFrameController';
+import { SessionBootSequence } from './session/SessionBootSequence';
 import {
   applyRuntimeParameterStoreTransaction,
   type RuntimeParameterKey,
@@ -148,6 +149,9 @@ export function createVisualizerRuntimeSession(bindings: VisualizerRuntimeBindin
     } = infrastructure;
     const $ = (sel: string) => document.querySelector(sel);
     const sessionRecoverySupervisor = getSessionRecoverySupervisor();
+    // Sprint L3: ordered, frame-aligned start-up steps (replaces staggered setup timers).
+    const bootSequence = new SessionBootSequence(root, DEBUG_FLAGS.GENERAL);
+    sessionDisposer.add(() => bootSequence.dispose());
 
     // ✅ Canvas2D context initialized
 
@@ -395,7 +399,7 @@ export function createVisualizerRuntimeSession(bindings: VisualizerRuntimeBindin
       recalculateRotationSpeed,
       getAngle: () => getProductionAngle(),
       query: $,
-      asyncRegistry,
+      bootSequence,
       eventRegistry,
       sessionDisposer,
       debugGeneral: DEBUG_FLAGS.GENERAL,
@@ -482,11 +486,11 @@ export function createVisualizerRuntimeSession(bindings: VisualizerRuntimeBindin
     // Phase 4.8H.4: macro DOM feedback is owned by the UI side-effect runtime.
     const updateMacroVisuals = () => uiSideEffects.updateMacroVisuals();
     
-    // Initialize macro visuals after DOM loads
-    asyncRegistry.setTimeout(() => {
+    // Sprint L3: macro visuals + center preview boxes, once the DOM is committed.
+    bootSequence.add('macro-visuals', 20, () => {
       updateMacroVisuals();
-      centerGraphicController.updatePreviewBoxes(); // Initialize preview boxes
-    }, 100);
+      centerGraphicController.updatePreviewBoxes();
+    });
     
     // PHASE 3: Center Graphic media controls (Sprint 22A extraction)
     centerGraphicController.bindControls();
@@ -504,12 +508,12 @@ export function createVisualizerRuntimeSession(bindings: VisualizerRuntimeBindin
     // Sprint 22C / Phase 4.8H.4: slider display setup is exposed by the control-binding runtime.
     const setupSliderValueDisplays = controlBindings.setupSliderValueDisplays;
     
-    // Initialize controls after DOM loads (AFTER initializeUIFromDefaults at 300ms)
-    asyncRegistry.setTimeout(() => {
-      // ⚡ Initialize slider value displays
+    // Sprint L3: slider readouts + deferred center controls, strictly after the
+    // control-defaults step (order 30) instead of racing it on a 350 ms timer.
+    bootSequence.add('slider-readouts', 40, () => {
       setupSliderValueDisplays();
       centerGraphicController.bindDeferredControls();
-    }, 350); // 🎯 Wait for initializeUIFromDefaults (300ms) to complete first
+    });
 
     eventHandlers.windowWheel = (e: WheelEvent) => {
       if (!params.allowZoom) return;
@@ -646,6 +650,8 @@ export function createVisualizerRuntimeSession(bindings: VisualizerRuntimeBindin
       }
     });
     sessionRecoverySupervisor.markRunning('Visualizer runtime active.');
+    // Sprint L3: every bind() is registered; run the ordered start-up steps.
+    bootSequence.start();
     if (DEBUG_FLAGS.PERFORMANCE) console.log('✅ RAF STARTED: RuntimeFrameScheduler authority active');
 
     // Sprint 22N.C.4C: every runtime-owned resource is registered with the

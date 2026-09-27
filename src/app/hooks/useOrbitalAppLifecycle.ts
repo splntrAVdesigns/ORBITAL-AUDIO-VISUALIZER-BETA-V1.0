@@ -1,5 +1,8 @@
 import { useEffect } from 'react';
 import { checkBrowserCompatibility } from '../utils/browserCompat';
+import { detectDeviceGate, type DeviceGate } from '../boot/deviceGate';
+import { safeLocalStorage } from '../utils/browserCompat';
+import { isReturningSession, markSessionBooted } from '../boot/sessionBoot';
 import {
   applyRuntimeParameterTransaction,
   readRuntimeParameterTransaction,
@@ -8,6 +11,13 @@ import {
 } from '../runtime/parameters/RuntimeParameterTransactions';
 
 type AppState = 'landing' | 'loading' | 'main';
+
+// Sprint L4: bump whenever onboarding content materially changes. A version bump
+// re-shows the tutorial once per browser (even to someone who previously opted out)
+// without touching the opt-out state for versions already shown.
+export const ONBOARDING_VERSION = '1';
+const ONBOARDING_OPT_OUT_KEY = `orbital.onboarding.optOut.v${ONBOARDING_VERSION}`;
+const ONBOARDING_SHOWN_SESSION_KEY = `orbital.onboarding.shown.v${ONBOARDING_VERSION}`;
 
 interface Options {
   appState: AppState;
@@ -19,32 +29,42 @@ interface Options {
   monitorEnabled: boolean;
   autoAdvance: boolean;
   shuffleEnabled: boolean;
-  setIsMobileDevice: (value: boolean) => void;
-  setIsLandscapeOnly: (value: boolean) => void;
+  setDeviceGate: (value: DeviceGate) => void;
   setShowIntroTutorial: (value: boolean) => void;
   setAutoAdvance: (value: boolean) => void;
   setShuffleEnabled: (value: boolean) => void;
-  setAppReady: (value: boolean) => void;
   setSettingsPanelOpen: (value: boolean) => void;
   setCompatMissing: (value: string[]) => void;
   setShowCompatWarning: (value: boolean) => void;
 }
 
+/** Sprint L4: true once per tab for this onboarding version — set by App.tsx on close. */
+export function markOnboardingShownThisSession(): void {
+  try { window.sessionStorage.setItem(ONBOARDING_SHOWN_SESSION_KEY, '1'); } catch { /* unavailable */ }
+}
+
+/** Sprint L4: permanent opt-out for this onboarding version only — a future version bump clears it. */
+export function setOnboardingOptedOut(): void {
+  safeLocalStorage.setItem(ONBOARDING_OPT_OUT_KEY, 'true');
+}
+
+function shouldShowOnboarding(): boolean {
+  if (safeLocalStorage.getItem(ONBOARDING_OPT_OUT_KEY) === 'true') return false;
+  try {
+    if (window.sessionStorage.getItem(ONBOARDING_SHOWN_SESSION_KEY) === '1') return false;
+  } catch { /* if sessionStorage is unavailable, fall through and show it */ }
+  return true;
+}
+
 export function useOrbitalAppLifecycle(options: Options) {
   const o = options;
   useEffect(() => {
-    const update = () => {
-      const mobileUA = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-      const small = window.innerWidth < 768;
-      const portrait = window.innerHeight > window.innerWidth;
-      o.setIsMobileDevice(mobileUA && small);
-      o.setIsLandscapeOnly(!mobileUA && small && portrait);
-    };
+    const update = () => o.setDeviceGate(detectDeviceGate());
     update();
     window.addEventListener('resize', update);
     window.addEventListener('orientationchange', update);
     return () => { window.removeEventListener('resize', update); window.removeEventListener('orientationchange', update); };
-  }, [o.setIsLandscapeOnly, o.setIsMobileDevice]);
+  }, [o.setDeviceGate]);
 
   useEffect(() => {
     const handler = (event: Event) => {
@@ -56,8 +76,13 @@ export function useOrbitalAppLifecycle(options: Options) {
     return () => window.removeEventListener(RUNTIME_PARAMETER_TRANSACTION_EVENT, handler);
   }, []);
 
+  // Sprint L4: session-aware, versioned onboarding (replaces the single permanent
+  // 'orbital-intro-completed' flag, which meant the tutorial could show at most once
+  // per browser, ever, with no way to bring it back for a new feature set).
   useEffect(() => {
-    if (o.appState === 'main' && !o.isMobileDevice && !o.isLandscapeOnly && !localStorage.getItem('orbital-intro-completed')) o.setShowIntroTutorial(true);
+    if (o.appState === 'main' && !o.isMobileDevice && !o.isLandscapeOnly && shouldShowOnboarding()) {
+      o.setShowIntroTutorial(true);
+    }
   }, [o.appState, o.isLandscapeOnly, o.isMobileDevice, o.setShowIntroTutorial]);
 
   useEffect(() => {
@@ -67,11 +92,13 @@ export function useOrbitalAppLifecycle(options: Options) {
     o.setShuffleEnabled(false);
   }, [o.setAutoAdvance, o.setShuffleEnabled]);
 
+  // Sprint L2/L4: marks this tab as booted once the real app is up, so a same-tab
+  // reload (isReturningSession()) can skip the loader's minimum brand hold. Boot
+  // readiness itself (when the loader dismisses) is owned by boot/bootReadiness.ts —
+  // there is no fixed reveal timer here any more.
   useEffect(() => {
-    if (o.appState !== 'main') { o.setAppReady(false); return; }
-    const timer = window.setTimeout(() => o.setAppReady(true), 360);
-    return () => window.clearTimeout(timer);
-  }, [o.appState, o.setAppReady]);
+    if (o.appState === 'main') markSessionBooted();
+  }, [o.appState]);
 
   useEffect(() => {
     const button = document.getElementById('play');
@@ -94,3 +121,5 @@ export function useOrbitalAppLifecycle(options: Options) {
     if (!result.compatible) { o.setCompatMissing(result.missing); o.setShowCompatWarning(true); }
   }, [o.setCompatMissing, o.setShowCompatWarning]);
 }
+
+export { isReturningSession };

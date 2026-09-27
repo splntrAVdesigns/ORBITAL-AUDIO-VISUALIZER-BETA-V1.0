@@ -3,6 +3,7 @@
 
 import { useState } from 'react';
 import { HelpCircle, Keyboard, ChevronDown } from 'lucide-react';
+import { KEYBOARD_SHORTCUTS } from '../../config/keyboardShortcuts';
 
 export function ProTipsSection() {
   const [activeTab, setActiveTab] = useState<'intro' | 'shortcuts'>('intro');
@@ -99,14 +100,14 @@ export function ProTipsSection() {
         </button>
       </div>
 
-      {/* Content Area */}
+      {/* Content Area — Sprint L5: no longer its own scroll region (was a third,
+          differently-styled scroller nested inside the panel's single scroll owner).
+          It now grows with the page like every other section. */}
       <div style={{
         background: 'rgba(0,0,0,0.3)',
         border: '1px solid rgba(30,144,255,0.15)',
         borderRadius: '6px',
         padding: '12px',
-        maxHeight: '400px',
-        overflowY: 'auto',
         fontSize: '9px',
         lineHeight: '1.5',
         color: 'rgba(148,175,180,0.9)',
@@ -241,15 +242,12 @@ export function ProTipsSection() {
                 Keyboard Shortcuts:
               </div>
               
-              <ShortcutItem shortcut="SPACE" description="Play/Pause" />
-              <ShortcutItem shortcut="M" description="Mute" />
-              <ShortcutItem shortcut="1-4" description="Modes" />
-              <ShortcutItem shortcut="C" description="Colors" />
-              <ShortcutItem shortcut="F" description="Fullscreen (ESC to exit)" />
-              <ShortcutItem shortcut="S" description="Screenshot" />
-              <ShortcutItem shortcut="R" description="Record" />
-              <ShortcutItem shortcut="H" description="Hide Panel" />
-              <ShortcutItem shortcut="?" description="Help" />
+              {/* Sprint L6: rendered from the shared registry (config/keyboardShortcuts.ts)
+                  instead of a second hardcoded copy — this is also where the previously
+                  undocumented arrow-key preset navigation now shows up. */}
+              {KEYBOARD_SHORTCUTS.map((entry) => (
+                <ShortcutItem key={entry.keys} shortcut={entry.keys} description={entry.description} />
+              ))}
             </div>
 
             {/* Additional Tips */}
