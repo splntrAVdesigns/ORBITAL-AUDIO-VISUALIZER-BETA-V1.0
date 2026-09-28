@@ -52,7 +52,7 @@ export const defaultParams = {
   // Spark impact is selected exclusively through beatPulseType ('spark').
   sparkAmps: 0.5, sparkTrail: 0.5, sparkDensity: 0.5, sparkDispersion: 0.45, // 🚀 PHASE 5A: sparkDensity added for Macro4
   // Vectorscope Analyzer (Radial Frequency Visualizer)
-  shapeOscillate: false, shapeEdgeTrails: 0.50, shapeDistortion: 0.30, shapeTurbulence: 0.50, shapeDecay: 0.22, shapeOrbitDrift: 0.40, shapeDensity: 0.75, shapeBurstStrength: 0.20,
+  shapeOscillate: false, shapeEdgeTrails: 0.50, shapeDistortion: 0.67, shapeTurbulence: 0.50, shapeDecay: 0.22, shapeOrbitDrift: 0.40, shapeDensity: 0.75, shapeBurstStrength: 0.20,
   coreParticlesShapeMode: 'dot' as 'dot' | 'tri' | 'dia' | 'all',
   // Phase 3 features (Image Upload, Recording, etc.)
   centerImageScale: 0.096, centerImageRotation: 0.0, centerImageReactive: true,

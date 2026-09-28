@@ -1,7 +1,13 @@
 import { CORE_PARTICLE_CAPACITY } from './CoreParticleSeedData';
 
 export const CORE_PARTICLE_MIN_FIELD_SCALE = 0.115;
-export const CORE_PARTICLE_MAX_FIELD_SCALE = 0.315;
+/**
+ * Sprint N: was 0.315, which let particles drift out over the spike ring at high Spread.
+ * 0.2223 is exactly what the OLD curve produced at 45% (0.115 + 0.2 * 0.45^0.78), so the
+ * slider's 100% now equals the former 45%. Values stored on the old scale are converted by
+ * config/coreParticleSpreadScale.ts.
+ */
+export const CORE_PARTICLE_MAX_FIELD_SCALE = 0.2223;
 
 export function clampCoreParticleControl(
   value: number,
@@ -15,7 +21,7 @@ export function clampCoreParticleControl(
  * Converts Spread into a useful core-area radius. The Phase 4.3 shader used
  * 4.5–15% of the short canvas side, which compressed the full particle field
  * into a small center knot. This curve reserves 11.5% at zero and expands to
- * 31.5% at full Spread while retaining headroom inside the spike ring.
+ * 22.2% at full Spread (Sprint N cap) so the cloud always stays inside the spike ring.
  */
 export function resolveCoreParticleFieldRadius(minSide: number, spread: number): number {
   const normalizedSpread = Math.pow(clampCoreParticleControl(spread), 0.78);

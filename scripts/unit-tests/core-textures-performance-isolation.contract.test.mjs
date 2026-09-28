@@ -21,8 +21,13 @@ test('the known costly Canvas2D presets obey adaptive geometry limits', () => {
   const tunnel = read('src/app/src/shaders/presets/HologridDepthTunnel.ts');
   assert.match(cube, /renderQuality/);
   assert.match(cube, /quality < 0\.7 \? 6/);
-  assert.match(tunnel, /Math\.min\(24/);
-  assert.match(tunnel, /Math\.min\(48/);
+  // Sprint N: geometry is bounded by preallocated typed arrays; sliders reach their full range.
+  assert.match(tunnel, /renderQuality/);
+  assert.match(tunnel, /const MAX_RINGS = 42;/);
+  assert.match(tunnel, /const MAX_SEGMENTS = 96;/);
+  assert.match(tunnel, /new Float32Array\(MAX_RINGS \* MAX_SEGMENTS\)/);
+  assert.doesNotMatch(tunnel, /shadowBlur\s*=/, 'Hologrid must not use per-primitive shadowBlur');
+  assert.doesNotMatch(tunnel, /points\.push\(/, 'Hologrid must not allocate ring points per frame');
 });
 
 test('Digital Matrix stages its first visible columns and starts from conservative defaults', () => {

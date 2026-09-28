@@ -1,6 +1,7 @@
 import { memo, useCallback, useEffect, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { defaultParams } from '../config/defaultParams';
+import { installCoreLayerExclusivity } from '../runtime/parameters/coreLayerExclusivity';
 import {
   dispatchRuntimeParameterTransaction,
   readRuntimeParameterTransaction,
@@ -34,6 +35,9 @@ function resetInput(id: string, value: number | boolean): void {
 
 function CoreParticlesSettingsComponent() {
   const [collapsed, setCollapsed] = useState(true);
+
+  // Sprint N: enabling Core Particles switches Core Textures off (and vice versa).
+  useEffect(() => installCoreLayerExclusivity(), []);
   const [activeParticleMode, setActiveParticleMode] = useState<CoreParticleShapeMode>(() =>
     normalizeShapeMode(typeof window !== 'undefined' ? (window as any).params?.coreParticlesShapeMode : 'dot'),
   );

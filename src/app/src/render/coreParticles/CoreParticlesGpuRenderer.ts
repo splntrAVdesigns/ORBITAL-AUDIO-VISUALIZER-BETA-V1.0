@@ -445,7 +445,7 @@ export class CoreParticlesGpuRenderer {
     const high = liftCoreParticleBand(params.coreParticleHigh ?? audioEnergy * 0.55, 2.15);
     const transient = liftCoreParticleBand(params.transient ?? frame.beatPulse ?? 0, 1.75);
     const beatPulse = clamp(frame.beatPulse ?? 0);
-    const spread = clamp(params.coreParticlesSpread ?? 0.30);
+    const spread = clamp(params.coreParticlesSpread ?? 0.67);
     const intensityControl = clamp(params.coreParticlesIntensity ?? 0.50);
     const intensity = resolveCoreParticleIntensity(intensityControl);
     const visualEnergy = resolveCoreParticleVisualEnergy(intensityControl);

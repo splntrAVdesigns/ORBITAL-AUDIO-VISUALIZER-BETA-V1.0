@@ -5,6 +5,7 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { ChevronDown, Star } from 'lucide-react';
 import { SHADER_REGISTRY } from '../src/shaders/ShaderRegistry';
+import { CORE_LAYER_EXCLUSIVITY_EVENT, installCoreLayerExclusivity } from '../runtime/parameters/coreLayerExclusivity';
 
 interface ShaderCard {
   id: string;
@@ -77,6 +78,14 @@ function CoreTexturesSettingsComponent({ onReset }: CoreTexturesSettingsProps) {
       window.removeEventListener('core-textures-ready', onReady as EventListener);
     };
   }, [hydrateFromRegistry, syncFromEngine, selectedId]);
+
+  // Sprint N: mutual exclusion with Core Particles. Re-render when either layer is forced off.
+  useEffect(() => {
+    const release = installCoreLayerExclusivity();
+    const onLayerChange = () => bump();
+    window.addEventListener(CORE_LAYER_EXCLUSIVITY_EVENT, onLayerChange);
+    return () => { window.removeEventListener(CORE_LAYER_EXCLUSIVITY_EVENT, onLayerChange); release(); };
+  }, []);
 
   useEffect(() => {
     const onFavUpdate = () => syncFromEngine();
@@ -376,7 +385,30 @@ function CoreTexturesSettingsComponent({ onReset }: CoreTexturesSettingsProps) {
           <div id="shaderSpecificControls" style={{ minHeight: '40px' }}>
             {selectedShader ? (
               <div>
-                {Object.entries((selectedShader as any).controls || {}).map(([key, control]) => renderShaderControl(key, control))}
+                {(() => {
+                  // Sprint N: hide controls the current mode ignores and label each group.
+                  const allControls: Record<string, any> = (selectedShader as any).controls || {};
+                  const valueOf = (k: string) => params[formatParamKey(k)] ?? allControls[k]?.default;
+                  const out: React.ReactNode[] = [];
+                  let lastGroup: string | undefined;
+                  for (const [key, control] of Object.entries(allControls)) {
+                    if (control.showWhen) {
+                      const visibleNow = Object.entries(control.showWhen as Record<string, string[]>)
+                        .every(([dep, allowed]) => allowed.includes(String(valueOf(dep))));
+                      if (!visibleNow) continue;
+                    }
+                    if (control.group && control.group !== lastGroup) {
+                      out.push(
+                        <div key={`group-${control.group}`} style={{ fontSize: '9px', fontWeight: 800, letterSpacing: '0.6px', textTransform: 'uppercase', color: 'rgba(255,20,147,0.75)', margin: '10px 0 6px', paddingBottom: '3px', borderBottom: '1px solid rgba(255,20,147,0.18)' }}>
+                          {control.group}
+                        </div>
+                      );
+                      lastGroup = control.group;
+                    }
+                    out.push(renderShaderControl(key, control));
+                  }
+                  return out;
+                })()}
               </div>
             ) : (
               <div style={{ fontSize: '10px', color: '#6b7280', fontStyle: 'italic', textAlign: 'center', padding: '12px' }}>

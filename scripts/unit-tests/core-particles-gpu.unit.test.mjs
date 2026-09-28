@@ -38,12 +38,15 @@ test('Core Particle control mapping gives Spread, Pulse, Burst and Density usefu
     context,
   );
   const lowField = mapping.resolveCoreParticleFieldRadius(1000, 0);
-  const defaultField = mapping.resolveCoreParticleFieldRadius(1000, 0.30);
-  const highField = mapping.resolveCoreParticleFieldRadius(1000, 0.90);
+  // Sprint N: Spread re-scaled so 100% equals the former 45% (the field used to reach the spike ring).
+  const defaultField = mapping.resolveCoreParticleFieldRadius(1000, 0.67);
+  const fullField = mapping.resolveCoreParticleFieldRadius(1000, 1);
+  const legacy45 = 1000 * (0.115 + (0.315 - 0.115) * Math.pow(0.45, 0.78));
   assert.equal(lowField, 115);
-  assert.ok(defaultField > 185 && defaultField < 205);
-  assert.ok(highField > 295 && highField < 310);
-  assert.ok(highField / lowField > 2.5, 'Spread must create an obvious zoom/expansion range');
+  assert.ok(defaultField > 185 && defaultField < 205, 'default Spread keeps the former 30% field size');
+  assert.ok(Math.abs(fullField - legacy45) < 0.5, 'Spread 100% must equal the former 45%');
+  assert.ok(fullField < 230, 'full Spread must stay inside the spike ring');
+  assert.ok(fullField / lowField > 1.9, 'Spread must still create an obvious expansion range');
   assert.equal(mapping.resolveCoreParticlePulse(0.8, 0), 0);
   assert.ok(mapping.resolveCoreParticlePulse(0.8, 0.9) > 0.8);
   assert.equal(mapping.resolveCoreParticleImpulse(0.8, 0), 0);

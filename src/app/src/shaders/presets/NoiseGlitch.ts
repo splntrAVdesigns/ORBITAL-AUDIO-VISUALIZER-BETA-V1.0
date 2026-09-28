@@ -58,18 +58,22 @@ export const NoiseGlitchShader: ShaderPreset = {
   thumbnail: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Crect fill="%23000" width="100" height="100"/%3E%3Cg opacity="0.7"%3E%3Crect fill="%23fff" x="0" y="10" width="100" height="2"/%3E%3Crect fill="%23fff" x="0" y="30" width="100" height="2"/%3E%3Crect fill="%23fff" x="0" y="50" width="100" height="2"/%3E%3Crect fill="%23fff" x="0" y="70" width="100" height="2"/%3E%3Crect fill="%23fff" x="0" y="90" width="100" height="2"/%3E%3C/g%3E%3C/svg%3E',
   type: 'canvas2d',
   category: 'experimental',
-  defaults: { audioIntensity: 0.72, frequencyRange: 'high', beatSync: true, scale: 1.0, speed: 0.65, opacity: 0.8, blendMode: 'screen', noiseIntensity: 0.80, glitchType: 'split', scanlineSpeed: 0.30, glitchBurst: 0.80, rgbSplitAmount: 0.45, scanlineDensity: 0.95, staticGrain: 0.42, staticBlinkSpeed: .72, staticSquareFill: .7, beatShockAmount: 1.0 },
+  // Sprint N: Noise Glitch always opens as LED Pixels (density .20, blink .15, fill .70, shock 1).
+  defaults: { audioIntensity: 0.72, frequencyRange: 'high', beatSync: true, scale: 1.0, speed: 0.65, opacity: 0.8, blendMode: 'screen', noiseIntensity: 0.80, glitchType: 'LED Pixels', scanlineSpeed: 0.30, scanlineWidth: 1.0, glitchBurst: 0.80, rgbSplitAmount: 0.45, scanlineDensity: 0.95, staticGrain: 0.20, staticBlinkSpeed: 0.15, staticSquareFill: 0.70, beatShockAmount: 1.0 },
+  // Sprint N: controls are grouped by what they drive. `showWhen` hides sliders that the
+  // selected Glitch Type ignores, and `group` labels each block in the panel.
   controls: {
-    glitchType: { type: 'select', label: 'Glitch Type', options: ['split', 'LED Pixels', 'scanlines', 'color-shift'], default: 'split' },
-    noiseIntensity: { type: 'slider', label: 'Noise Intensity', min: 0, max: 1, step: 0.05, default: 0.80 },
-    scanlineSpeed: { type: 'slider', label: 'Scanline Speed', min: 0, max: 2, step: 0.1, default: 0.30 },
-    glitchBurst: { type: 'slider', label: 'Glitch Burst', min: 0, max: 1.5, step: 0.05, default: 0.80 },
-    rgbSplitAmount: { type: 'slider', label: 'RGB Split Amount', min: 0, max: 1.2, step: 0.05, default: 0.45 },
-    scanlineDensity: { type: 'slider', label: 'Scanline Density', min: 0.2, max: 1.6, step: 0.05, default: 0.95 },
-    staticGrain: { type: 'slider', label: 'LED Square Density', min: 0, max: 1.2, step: 0.05, default: 0.42 },
-    staticBlinkSpeed: { type: 'slider', label: 'LED Blink Speed', min: 0, max: 2, step: 0.05, default: .72 },
-    staticSquareFill: { type: 'slider', label: 'LED Square Fill', min: .25, max: .92, step: .05, default: .7 },
-    beatShockAmount: { type: 'slider', label: 'Beat Shock Amount', min: 0, max: 1.4, step: 0.05, default: 1.0 },
+    glitchType: { type: 'select', label: 'Glitch Type', options: ['LED Pixels', 'scanlines', 'split', 'color-shift'], default: 'LED Pixels', group: 'Type' },
+    noiseIntensity: { type: 'slider', label: 'Noise Intensity', min: 0, max: 1, step: 0.05, default: 0.80, group: 'All types' },
+    beatShockAmount: { type: 'slider', label: 'Beat Shock Amount', min: 0, max: 1.4, step: 0.05, default: 1.0, group: 'All types' },
+    staticGrain: { type: 'slider', label: 'LED Square Density', min: 0, max: 1.2, step: 0.05, default: 0.20, group: 'LED Pixels', showWhen: { glitchType: ['LED Pixels', 'static'] } },
+    staticBlinkSpeed: { type: 'slider', label: 'LED Blink Speed', min: 0, max: 2, step: 0.05, default: 0.15, group: 'LED Pixels', showWhen: { glitchType: ['LED Pixels', 'static'] } },
+    staticSquareFill: { type: 'slider', label: 'LED Square Fill', min: 0.25, max: 0.92, step: 0.05, default: 0.70, group: 'LED Pixels', showWhen: { glitchType: ['LED Pixels', 'static'] } },
+    scanlineDensity: { type: 'slider', label: 'Scanline Density', min: 0.2, max: 1.6, step: 0.05, default: 0.95, group: 'Scanlines', showWhen: { glitchType: ['scanlines'] } },
+    scanlineWidth: { type: 'slider', label: 'Line Width', min: 0.5, max: 8, step: 0.25, default: 1.0, group: 'Scanlines', showWhen: { glitchType: ['scanlines'] } },
+    scanlineSpeed: { type: 'slider', label: 'Scanline Speed', min: 0, max: 2, step: 0.1, default: 0.30, group: 'Scanlines', showWhen: { glitchType: ['scanlines', 'color-shift', 'rgb-shift'] } },
+    glitchBurst: { type: 'slider', label: 'Glitch Burst', min: 0, max: 1.5, step: 0.05, default: 0.80, group: 'Split', showWhen: { glitchType: ['split'] } },
+    rgbSplitAmount: { type: 'slider', label: 'RGB Split Amount', min: 0, max: 1.2, step: 0.05, default: 0.45, group: 'Split / Color shift', showWhen: { glitchType: ['split', 'color-shift', 'rgb-shift'] } },
   },
   init(canvas: HTMLCanvasElement | OffscreenCanvas) { ctx = canvas.getContext('2d', { alpha: true }) as CanvasRenderingContext2D; canvasWidth = canvas.width; canvasHeight = canvas.height; lastTime = 0; phase = 0; glitchHold = 0; ledBlinkPhase = 0; },
   render(audioData: AudioData, params: ShaderParams, time: number) {
@@ -98,7 +102,8 @@ export const NoiseGlitchShader: ShaderPreset = {
     if (type === 'static' || type === 'LED Pixels') {
       drawBlinkSquares(ctx, cx, cy, radius, hue, intensity, audioBoost, opacity, dt, staticGrain, (params as any).staticBlinkSpeed ?? .72, (params as any).staticSquareFill ?? .7);
     } else if (type === 'scanlines') {
-      ctx.lineWidth = Math.max(2, radius * 0.012);
+      // Sprint N: Line Width is a multiplier on the original base thickness (1.0 = previous look).
+      ctx.lineWidth = Math.max(2, radius * 0.012) * Math.max(0.25, Math.min(10, (params as any).scanlineWidth ?? 1));
       const lineCount = Math.round(3 + scanlineDensity * 8);
       for (let i = 0; i < lineCount; i++) {
         const travel = pingpong(phase * (0.28 + i * 0.035) + i * 0.22);

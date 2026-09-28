@@ -1,5 +1,6 @@
 import { defaultParams, type VisualizerParams } from '../../config/defaultParams';
 import { AVAILABLE_BEAT_PULSE_TYPES } from '../../config/beatPulseTypes';
+import { resolveCoreLayerPatch, syncForcedLayers } from './coreLayerExclusivity';
 
 type Widen<T> = T extends number ? number : T extends boolean ? boolean : T extends string ? string : T;
 
@@ -333,10 +334,13 @@ export function applyRuntimeParameterTransaction(
   input: unknown,
 ): RuntimeParameterTransactionResult {
   const { patch, rejected, clamped } = sanitizeRuntimeParameterPatch(input);
+  // Sprint N: Core Particles and Core Textures are mutually exclusive.
+  const layers = resolveCoreLayerPatch(patch);
   const applied = Object.keys(patch) as RuntimeParameterKey[];
   if (target) {
     for (const key of applied) target[key] = patch[key];
   }
+  syncForcedLayers(layers.forced);
   return { applied, rejected, clamped };
 }
 
@@ -346,8 +350,11 @@ export function applyRuntimeParameterStoreTransaction(
   input: unknown,
 ): RuntimeParameterTransactionResult {
   const { patch, rejected, clamped } = sanitizeRuntimeParameterPatch(input);
+  // Sprint N: Core Particles and Core Textures are mutually exclusive.
+  const layers = resolveCoreLayerPatch(patch);
   const applied = Object.keys(patch) as RuntimeParameterKey[];
   if (applied.length > 0) store.patch(patch);
+  syncForcedLayers(layers.forced);
   return { applied, rejected, clamped };
 }
 

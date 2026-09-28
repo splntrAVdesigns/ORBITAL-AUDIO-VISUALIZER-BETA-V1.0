@@ -1,5 +1,25 @@
 import type { AudioData, ShaderParams, ShaderPreset } from '../ShaderRegistry';
 
+// Sprint N: Hologrid rewrite for frame time + working controls.
+//  * No shadowBlur anywhere (it re-blurs every primitive; ~240 blur passes/frame before).
+//    Glow is now one wider translucent stroke under each ring, driven by Line Glow.
+//  * Zero per-frame allocation: ring geometry lives in preallocated typed arrays
+//    (was ~1,150 objects + arrays per frame).
+//  * Spokes are ONE batched path and follow depth order, so wrap-around no longer draws
+//    a long back-to-front segment.
+//  * Ring/grid sliders were clamped to 24 rings / 48 segments although they advertise
+//    42 / 96, so the upper half of both did nothing. Real ranges now apply.
+//  * Perspective, Tunnel Depth, Center Pull, Horizon Tilt and Audio Pulse had ranges too
+//    narrow to notice; each curve now passes through the old value at the slider default
+//    (default look unchanged) and reaches clearly different shapes at either end.
+const MAX_RINGS = 42;
+const MAX_SEGMENTS = 96;
+const ringX = new Float32Array(MAX_RINGS * MAX_SEGMENTS);
+const ringY = new Float32Array(MAX_RINGS * MAX_SEGMENTS);
+const ringAlpha = new Float32Array(MAX_RINGS);
+const ringZ = new Float32Array(MAX_RINGS);
+const depthOrder = new Int16Array(MAX_RINGS);
+
 let ctx: CanvasRenderingContext2D | null = null;
 let canvasWidth = 0;
 let canvasHeight = 0;
@@ -9,6 +29,12 @@ let smoothEnergy = 0;
 let smoothBeat = 0;
 
 const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
+const clampRange = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
+/** Two-segment linear map through (x0,y0) (x1,y1) (x2,y2); x1 is the slider default. */
+function piecewise(x: number, x0: number, y0: number, x1: number, y1: number, x2: number, y2: number): number {
+  const v = clampRange(x, x0, x2);
+  return v <= x1 ? y0 + (y1 - y0) * ((v - x0) / (x1 - x0)) : y1 + (y2 - y1) * ((v - x1) / (x2 - x1));
+}
 const hsl = (h: number, s: number, l: number, a = 1) => `hsla(${((h % 360) + 360) % 360}, ${s}%, ${l}%, ${a})`;
 
 export const HologridDepthTunnelShader: ShaderPreset = {
@@ -85,15 +111,14 @@ export const HologridDepthTunnelShader: ShaderPreset = {
     const radius = Math.min(canvasWidth, canvasHeight) * 0.57 * (params.scale ?? 1.08);
     const hue = (params as any).hue ?? 190;
     const opacity = clamp01(params.opacity ?? 0.9);
-    // The tunnel can otherwise create thousands of glowing path segments.
-    // Quality is supplied by the engine's adaptive budget, not React state.
-    const quality = Math.max(0.5, Math.min(1, Number((params as any).renderQuality ?? 1)));
-    const rings = Math.max(10, Math.min(24, Math.round(((params as any).ringCount ?? 26) * quality)));
-    const segments = Math.max(20, Math.min(48, Math.round(((params as any).gridDensity ?? 64) * quality)));
+    // Adaptive quality (engine-supplied) scales counts; slider ranges are otherwise honoured in full.
+    const quality = clampRange(Number((params as any).renderQuality ?? 1), 0.5, 1);
+    const rings = clampRange(Math.round(((params as any).ringCount ?? 26) * quality), 6, MAX_RINGS);
+    const segments = clampRange(Math.round(((params as any).gridDensity ?? 64) * quality), 16, MAX_SEGMENTS);
     const depth = (params as any).tunnelDepth ?? 1.12;
     const perspective = (params as any).perspective ?? 1.18;
     const pulse = (params as any).pulseAmount ?? 0.92;
-    const glow = clamp01((params as any).lineGlow ?? 0.78);
+    const glow = clampRange((params as any).lineGlow ?? 0.78, 0, 1.2);
     const centerPull = (params as any).centerPull ?? 0.58;
     const twist = (params as any).twist ?? 0.32;
     const tilt = (params as any).horizonTilt ?? 0.12;
@@ -104,7 +129,7 @@ export const HologridDepthTunnelShader: ShaderPreset = {
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
 
-    // Subtle volumetric center haze. One radial gradient per frame, no post processing.
+    // Volumetric center haze (one gradient).
     const fog = ctx.createRadialGradient(cx, cy, radius * 0.02, cx, cy, radius * (0.55 + bass * 0.08));
     fog.addColorStop(0, hsl(hue + 12, 96, 60 + smoothBeat * 12, opacity * (0.12 + smoothEnergy * 0.1)));
     fog.addColorStop(0.34, hsl(hue + 26, 90, 48, opacity * 0.045));
@@ -114,98 +139,100 @@ export const HologridDepthTunnelShader: ShaderPreset = {
     ctx.arc(cx, cy, radius * 0.62, 0, Math.PI * 2);
     ctx.fill();
 
-    if (glow > 0) {
-      ctx.shadowColor = hsl(hue + 8, 100, 64, 0.42 * glow);
-      ctx.shadowBlur = 8 + glow * 22 + smoothBeat * 16;
-    }
-
-    const ringPoints: Array<Array<{ x: number; y: number; alpha: number; z: number; node: number }>> = [];
+    // Geometry -> typed arrays. Each curve passes through the OLD value at the slider's default,
+    // so the default look is unchanged, but the ends now reach clearly different shapes.
+    const perspectivePow = piecewise(perspective, 0.2, 0.55, 1.18, 1.4294, 2.25, 3.4);   // ring spacing
+    const depthReach = piecewise(depth, 0.25, 0.42, 1.12, 1.2736, 2.25, 2.35);             // front-ring reach
+    const pullGain = piecewise(centerPull, 0, 0, 0.58, 0.58, 1.2, 2.8);                    // throat squeeze
+    const yScale = 0.771 + (tilt - 0.12) * 0.5;                  // was 0.74 + tilt*0.26
+    const tiltShift = radius * (0.0528 + (tilt - 0.12) * 0.7);   // = old at default, 1.6x slope
     for (let r = 0; r < rings; r++) {
-      const z = ((r / rings + tunnelPhase) % 1);
+      const z = (r / rings + tunnelPhase) % 1;
       const invZ = 1 - z;
-      const perspectivePow = 1.04 + perspective * 0.33;
       const depthScale = Math.pow(invZ, perspectivePow);
-      const depthReach = 0.96 + depth * 0.28;
       const ringRadius = radius * (0.045 + depthScale * depthReach);
-      const audioPulse = 1 + bass * pulse * (0.16 + invZ * 0.36) + mid * pulse * 0.08 + smoothBeat * pulse * 0.09;
-      const pull = centerPull * z * 0.28;
-      // Keep rear rings visible longer while still implying depth fade.
-      const alpha = opacity * (0.18 + Math.pow(invZ, 0.42) * 0.74) * (0.72 + z * 0.34);
+      const audioPulse = 1 + bass * pulse * (0.20 + invZ * 0.5) + mid * pulse * 0.12 + smoothBeat * pulse * 0.16;
+      const pull = Math.min(0.85, pullGain * z * 0.28);
+      ringAlpha[r] = opacity * (0.18 + Math.pow(invZ, 0.42) * 0.74) * (0.72 + z * 0.34);
+      ringZ[r] = z;
       const ringTwist = now * speed * 0.18 + z * twist * Math.PI * 2.2 + mid * 0.42 + Math.sin(now * 0.35) * 0.05;
-      const points: Array<{ x: number; y: number; alpha: number; z: number; node: number }> = [];
+      const base = r * MAX_SEGMENTS;
+      const yShift = tiltShift * (z - 0.5) + bass * radius * 0.035;
       for (let s = 0; s < segments; s++) {
         const a = (s / segments) * Math.PI * 2 + ringTwist;
-        const shimmer = Math.sin(a * 6 + now * 2.4 + z * 12) * treble * 0.035;
-        const bassWarp = Math.sin(a * 2 - now * 1.1 + z * 5.5) * bass * 0.035;
+        const shimmer = Math.sin(a * 6 + now * 2.4 + z * 12) * treble * 0.05;
+        const bassWarp = Math.sin(a * 2 - now * 1.1 + z * 5.5) * bass * 0.05;
         const radial = ringRadius * audioPulse * (1 + shimmer + bassWarp);
-        const x = cx + Math.cos(a) * radial * (1 - pull);
-        const y = cy + Math.sin(a) * radial * (0.74 + tilt * 0.26) * (1 - pull)
-          + tilt * radius * (z - 0.5) * 0.44
-          + bass * radius * 0.035;
-        const node = ((s % Math.max(2, Math.round(segments / 16)) === 0) || (r % 4 === 0)) ? 1 : 0;
-        points.push({ x, y, alpha, z, node });
+        ringX[base + s] = cx + Math.cos(a) * radial * (1 - pull);
+        ringY[base + s] = cy + Math.sin(a) * radial * yScale * (1 - pull) + yShift;
       }
-      ringPoints.push(points);
     }
 
-    // Outer-to-inner rings, now brighter and denser.
+    // Rings: optional wide translucent glow stroke under a crisp stroke. No shadowBlur.
+    const glowPass = glow > 0.03;
     for (let r = rings - 1; r >= 0; r--) {
-      const points = ringPoints[r];
-      if (!points?.length) continue;
-      const z = points[0].z;
+      const z = ringZ[r];
       const invZ = 1 - z;
-      ctx.strokeStyle = hsl(hue + z * 42 + treble * 28, 98, 58 + invZ * 18 + smoothBeat * 10, points[0].alpha * 0.78);
-      ctx.lineWidth = Math.max(0.85, radius * (0.0024 + invZ * 0.0038) * (1 + smoothBeat * 0.45));
-      ctx.beginPath();
-      for (let i = 0; i < points.length; i++) {
-        const p = points[i];
-        if (i === 0) ctx.moveTo(p.x, p.y);
-        else ctx.lineTo(p.x, p.y);
+      const base = r * MAX_SEGMENTS;
+      const crisp = Math.max(0.85, radius * (0.0024 + invZ * 0.0038) * (1 + smoothBeat * 0.45));
+      const color = hue + z * 42 + treble * 28;
+      const light = 58 + invZ * 18 + smoothBeat * 10;
+      if (glowPass) {
+        ctx.strokeStyle = hsl(color + 8, 100, Math.min(62, light), ringAlpha[r] * 0.13 * glow);
+        ctx.lineWidth = crisp * (1.8 + glow * 2.4);
+        ctx.beginPath();
+        ctx.moveTo(ringX[base], ringY[base]);
+        for (let s = 1; s < segments; s++) ctx.lineTo(ringX[base + s], ringY[base + s]);
+        ctx.closePath();
+        ctx.stroke();
       }
+      ctx.strokeStyle = hsl(color, 98, light, ringAlpha[r] * 0.78);
+      ctx.lineWidth = crisp;
+      ctx.beginPath();
+      ctx.moveTo(ringX[base], ringY[base]);
+      for (let s = 1; s < segments; s++) ctx.lineTo(ringX[base + s], ringY[base + s]);
       ctx.closePath();
       ctx.stroke();
     }
 
-    // Dense radial spokes. Limit to max 32 spokes to stay lightweight.
-    const radialStep = Math.max(1, Math.round(segments / 32));
-    ctx.shadowBlur = Math.max(3, glow * 14);
-    for (let s = 0; s < segments; s += radialStep) {
-      ctx.strokeStyle = hsl(hue + 16 + treble * 18, 92, 66, opacity * (0.22 + smoothEnergy * 0.22));
-      ctx.lineWidth = Math.max(0.65, radius * 0.0021 * (1 + smoothBeat * 0.25));
-      ctx.beginPath();
-      let started = false;
-      for (let r = rings - 1; r >= 0; r--) {
-        const p = ringPoints[r]?.[s % ringPoints[r].length];
-        if (!p) continue;
-        if (!started) { ctx.moveTo(p.x, p.y); started = true; }
-        else ctx.lineTo(p.x, p.y);
+    // Spokes: one batched path, back -> front in true depth order (no wrap-around jump).
+    const cut = clampRange(Math.ceil(rings * (1 - tunnelPhase)), 0, rings);
+    let n = 0;
+    for (let r = cut - 1; r >= 0; r--) depthOrder[n++] = r;
+    for (let r = rings - 1; r >= cut; r--) depthOrder[n++] = r;
+    const spokeDensityFade = Math.min(1, 0.35 + 26 / segments);
+    ctx.strokeStyle = hsl(hue + 16 + treble * 18, 92, 66, opacity * (0.22 + smoothEnergy * 0.22) * spokeDensityFade);
+    ctx.lineWidth = Math.max(0.65, radius * 0.0021 * (1 + smoothBeat * 0.25));
+    ctx.beginPath();
+    for (let s = 0; s < segments; s++) {
+      const first = depthOrder[0] * MAX_SEGMENTS + s;
+      ctx.moveTo(ringX[first], ringY[first]);
+      for (let k = 1; k < rings; k++) {
+        const idx = depthOrder[k] * MAX_SEGMENTS + s;
+        ctx.lineTo(ringX[idx], ringY[idx]);
       }
-      ctx.stroke();
     }
+    ctx.stroke();
 
-    // Tiny grid intersection nodes at ring/spoke crossings.
+    // Grid intersection nodes: one fill per sampled ring.
     const nodeStep = Math.max(1, Math.round(segments / 24));
-    ctx.shadowBlur = 4 + glow * 10;
     ctx.fillStyle = hsl(hue + 24 + treble * 22, 100, 72 + smoothBeat * 10, opacity * (0.28 + smoothEnergy * 0.18));
     for (let r = 2; r < rings; r += 3) {
-      const points = ringPoints[r];
-      if (!points) continue;
-      const nodeRadius = Math.max(0.55, radius * 0.0022 * (1 + points[0].z * 0.9 + smoothBeat * 0.9));
+      const base = r * MAX_SEGMENTS;
+      const nodeRadius = Math.max(0.55, radius * 0.0022 * (1 + ringZ[r] * 0.9 + smoothBeat * 0.9));
+      ctx.globalAlpha = ringAlpha[r] * (0.22 + ringZ[r] * 0.38) * opacity;
+      ctx.beginPath();
       for (let s = 0; s < segments; s += nodeStep) {
-        const p = points[s % points.length];
-        if (!p) continue;
-        ctx.globalAlpha = p.alpha * (0.22 + p.z * 0.38) * opacity;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, nodeRadius, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.moveTo(ringX[base + s] + nodeRadius, ringY[base + s]);
+        ctx.arc(ringX[base + s], ringY[base + s], nodeRadius, 0, Math.PI * 2);
       }
+      ctx.fill();
     }
     ctx.globalAlpha = 1;
 
     // Vanishing-point glow and beat pulse.
-    ctx.shadowBlur = 10 + glow * 18 + smoothBeat * 18;
     const centerGlow = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius * (0.12 + smoothBeat * 0.05));
-    centerGlow.addColorStop(0, hsl(hue + 24, 100, 72, opacity * (0.18 + smoothBeat * 0.18)));
+    centerGlow.addColorStop(0, hsl(hue + 24, 100, 72, opacity * (0.18 + smoothBeat * 0.18 + glow * 0.08)));
     centerGlow.addColorStop(0.5, hsl(hue, 96, 56, opacity * 0.06));
     centerGlow.addColorStop(1, hsl(hue, 90, 40, 0));
     ctx.fillStyle = centerGlow;
@@ -214,7 +241,6 @@ export const HologridDepthTunnelShader: ShaderPreset = {
     ctx.fill();
 
     if (smoothBeat > 0.04) {
-      ctx.shadowBlur = 0;
       ctx.strokeStyle = hsl(hue + 32, 100, 72, opacity * smoothBeat * 0.36);
       ctx.lineWidth = Math.max(1, radius * 0.006);
       ctx.beginPath();

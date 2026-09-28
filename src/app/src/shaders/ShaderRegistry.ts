@@ -63,6 +63,10 @@ export interface ShaderPreset {
       step?: number;
       default: any;
       options?: string[];
+      /** Panel section heading; consecutive controls with the same group share one heading. */
+      group?: string;
+      /** Show this control only while another control holds one of the listed values. */
+      showWhen?: { [controlKey: string]: string[] };
     };
   };
 }

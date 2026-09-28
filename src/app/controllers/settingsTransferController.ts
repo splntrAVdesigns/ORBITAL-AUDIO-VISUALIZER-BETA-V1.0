@@ -1,3 +1,4 @@
+import { CORE_PARTICLE_SPREAD_SCALE_VERSION, migrateCustomPresetList, migrateLegacySpread } from '../config/coreParticleSpreadScale';
 import { DEBUG_FLAGS } from '../src/app/config/debugFlags';
 import { normalizeBeatPulseType } from '../config/beatPulseTypes';
 import { markUserRequestedReload } from '../runtime/crashTelemetry';
@@ -53,7 +54,7 @@ export function exportOrbitalSettings() {
     ...Object.fromEntries(SELECT_IDS.map((id) => [id, readSelect(id)])),
     ...Object.fromEntries(CHECKBOX_IDS.map((id) => [id, readCheckbox(id)])),
   };
-  const payload = { version:'1.0.0', name:'ORBITAL Settings', timestamp:new Date().toISOString(), params, customPresets };
+  const payload = { version:'1.0.0', spreadScale: CORE_PARTICLE_SPREAD_SCALE_VERSION, name:'ORBITAL Settings', timestamp:new Date().toISOString(), params, customPresets };
   const url = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type:'application/json' }));
   const anchor = document.createElement('a');
   anchor.href = url;
@@ -83,6 +84,10 @@ export function importOrbitalSettings(file: File) {
       }
 
       const importedParams = record.params as Record<string, unknown>;
+      // Sprint N: files exported before the Spread re-scale carry no spreadScale tag.
+      if ((record as { spreadScale?: unknown }).spreadScale !== CORE_PARTICLE_SPREAD_SCALE_VERSION && typeof importedParams.shapeDistortion === 'number') {
+        importedParams.shapeDistortion = migrateLegacySpread(importedParams.shapeDistortion);
+      }
       for (const key of PARAM_IDS) {
         const value = importedParams[key];
         const element = document.getElementById(key) as HTMLInputElement | null;
@@ -118,6 +123,7 @@ export function importOrbitalSettings(file: File) {
           return;
         }
         const customPresets = record.customPresets as unknown[];
+        migrateCustomPresetList(customPresets);
         safeLocalStorage.setItem('orbitalCustomPresets', JSON.stringify(customPresets));
         if (DEBUG_FLAGS.GENERAL) console.log(`✅ Imported ${customPresets.length} custom preset(s)`);
         if (customPresets.length > 0) {

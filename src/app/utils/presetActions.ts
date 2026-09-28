@@ -13,6 +13,9 @@
 // with its returned functions destructured back into the same local names that were
 // used inline before this extraction, so every existing call site keeps working unchanged.
 
+import { CORE_PARTICLE_SPREAD_SCALE_VERSION, migrateCustomPresetList } from '../config/coreParticleSpreadScale';
+import { applyShaderControlDefaults } from '../src/shaders/coreTextureControlDefaults';
+import { resolveCoreLayerConflict } from '../runtime/parameters/coreLayerExclusivity';
 import { palettes, type ColorPalette } from '../data/colorPalettes';
 import { presets } from '../data/presets';
 import { defaultParams } from '../config/defaultParams';
@@ -314,7 +317,7 @@ export function createPresetActions(ctx: PresetActionsContext) {
       setCheckbox("#shapeOscillate", (preset as any).shapeOscillate !== undefined ? (preset as any).shapeOscillate : false);
       setSlider("#shapeEdgeTrails", (preset as any).shapeEdgeTrails !== undefined ? (preset as any).shapeEdgeTrails : 0.3);
       setSlider("#shapeDecay", (preset as any).shapeDecay !== undefined ? (preset as any).shapeDecay : defaultParams.shapeDecay);
-      setSlider("#shapeDistortion", (preset as any).shapeDistortion !== undefined ? (preset as any).shapeDistortion : 0.30);
+      setSlider("#shapeDistortion", (preset as any).shapeDistortion !== undefined ? (preset as any).shapeDistortion : 0.67);
       setSlider("#shapeBurstStrength", (preset as any).shapeBurstStrength !== undefined ? (preset as any).shapeBurstStrength : 0.20);
       setSlider("#shapeTurbulence", (preset as any).shapeTurbulence !== undefined ? (preset as any).shapeTurbulence : 0.5);
       setSlider("#shapeOrbitDrift", (preset as any).shapeOrbitDrift !== undefined ? (preset as any).shapeOrbitDrift : 0.30);
@@ -419,6 +422,8 @@ export function createPresetActions(ctx: PresetActionsContext) {
       if (coreTextureToggle) coreTextureToggle.checked = corePresetEnabled;
       ctx.coreTexturesEngineRef.current?.setEnabled?.(corePresetEnabled);
       if ((params as any).coreTexturesShaderId) ctx.coreTexturesEngineRef.current?.selectShader?.((params as any).coreTexturesShaderId);
+      // Sprint N: a preset opens its shader on the shader's designed defaults (e.g. Noise Glitch -> LED Pixels).
+      const shaderControlDefaults = applyShaderControlDefaults(params as any, (params as any).coreTexturesShaderId);
       ctx.coreTexturesEngineRef.current?.updateParams?.({
         opacity: (params as any).coreTexturesOpacity,
         audioIntensity: (params as any).coreTexturesAudioIntensity,
@@ -429,7 +434,10 @@ export function createPresetActions(ctx: PresetActionsContext) {
         speed: (params as any).coreTexturesSpeed,
         density: (params as any).coreTexturesDensity,
         glowIntensity: (params as any).coreTexturesGlowIntensity,
+        ...shaderControlDefaults,
       });
+      // Sprint N: Core Particles and Core Textures are mutually exclusive (particles win a tie).
+      resolveCoreLayerConflict();
       
       // Presets may reverse-map their parameters into macro positions. Factory reset
       // explicitly disables this so all eight macro values remain at zero.
@@ -505,6 +513,8 @@ export function createPresetActions(ctx: PresetActionsContext) {
         const saved = safeLocalStorage.getItem('orbitalCustomPresets');
         if (saved) {
           customPresets = JSON.parse(saved);
+          // Sprint N: convert presets saved before the Spread re-scale (once, tagged).
+          if (migrateCustomPresetList(customPresets)) saveCustomPresetsToStorage();
         }
         // CRITICAL FIX: Always call updatePresetDropdown, even if no custom presets
         // This ensures built-in presets (including "Blang it Out") are always populated
@@ -675,6 +685,7 @@ export function createPresetActions(ctx: PresetActionsContext) {
         shapeEdgeTrails: getSlider("#shapeEdgeTrails"),
         shapeDecay: getSlider("#shapeDecay"),
         shapeDistortion: getSlider("#shapeDistortion"),
+        spreadScale: CORE_PARTICLE_SPREAD_SCALE_VERSION,
         shapeBurstStrength: getSlider("#shapeBurstStrength"),
         shapeTurbulence: getSlider("#shapeTurbulence"),
         shapeOrbitDrift: getSlider("#shapeOrbitDrift"),
@@ -869,7 +880,7 @@ export function createPresetActions(ctx: PresetActionsContext) {
           shapeOscillate: useCoreParticles,
           shapeEdgeTrails: useCoreParticles ? rand(0.22, 0.68) : 0,
           shapeDecay: useCoreParticles ? rand(0.12, 0.48) : defaultParams.shapeDecay,
-          shapeDistortion: useCoreParticles ? rand(0.18, 0.58) : 0,
+          shapeDistortion: useCoreParticles ? rand(0.40, 1.0) : 0, // Sprint N: old 0.18-0.58 on the new Spread scale
           shapeBurstStrength: useCoreParticles ? rand(0.12, 0.52) : defaultParams.shapeBurstStrength,
           shapeTurbulence: useCoreParticles ? rand(0.04, 0.36) : 0,
           shapeOrbitDrift: useCoreParticles ? rand(0.16, 0.54) : 0,
@@ -1446,7 +1457,7 @@ export function createPresetActions(ctx: PresetActionsContext) {
       updateSlider('#shockwaveRings', defaultParams.shockwaveRings);
       updateSlider('#shapeOscillate', defaultParams.shapeOscillate || false);
       updateSlider('#shapeEdgeTrails', defaultParams.shapeEdgeTrails || 0.5)
-      updateSlider('#shapeDistortion', defaultParams.shapeDistortion ?? 0.30);
+      updateSlider('#shapeDistortion', defaultParams.shapeDistortion ?? 0.67);
       updateSlider('#shapeBurstStrength', defaultParams.shapeBurstStrength ?? 0.20);
       updateSlider('#shapeTurbulence', defaultParams.shapeTurbulence ?? 0.5);
       updateSlider('#shapeDecay', defaultParams.shapeDecay || 0.08); 

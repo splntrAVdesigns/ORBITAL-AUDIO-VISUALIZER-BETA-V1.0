@@ -29,7 +29,7 @@ test('Performance HUD frame summary is split into exactly two rows', () => {
   assert.doesNotMatch(hud, /backdropFilter/);
 });
 
-test('requested built-in preset tuning is exact and all Core Particle presets use 30 percent spread', async context => {
+test('requested built-in preset tuning is exact and all Core Particle presets use the default spread (0.67 on the Sprint N scale, = old 30%)', async context => {
   const { presets, PRESET_VERSION } = await importBundledTypescript('src/app/data/presets.ts', context);
   const settings = name => presets.find(preset => preset.name === name)?.settings;
 
@@ -103,7 +103,7 @@ test('requested built-in preset tuning is exact and all Core Particle presets us
   const coreParticlePresets = presets.filter(preset => preset.settings.shapeOscillate === true);
   assert.equal(coreParticlePresets.length, 4); // Sprint K3: + Neural Bloom
   for (const preset of coreParticlePresets) {
-    assert.equal(preset.settings.shapeDistortion, 0.30, `${preset.name} must recall 30% Core Particle Spread`);
+    assert.equal(preset.settings.shapeDistortion, 0.67, `${preset.name} must recall the default Core Particle Spread (old 30%)`);
   }
 });
 
@@ -121,7 +121,7 @@ test('Sprint K3 feature presets exist with their hero features and every preset 
     Hyperspace: { beatDetect: true, beatPulseType: 'starfield', haloStrobeEnabled: true, haloStrobeDivision: '1/4', palette: 35 },
     'Liquid Metal': { astralShaper: true, astralMorphMode: 'path-interpolate', rotationSyncMode: 'oscillator', palette: 36 },
     'Strobe Temple': { beatDetect: true, beatPulseType: 'dark-strobe', haloStrobeEnabled: true, haloStrobeDivision: '1/8', shockwave: true, palette: 39 },
-    'Neural Bloom': { shapeOscillate: true, shapeDistortion: 0.30, coreTexturesEnabled: true, coreTexturesShaderId: 'hologrid-depth-tunnel', palette: 31 },
+    'Neural Bloom': { shapeOscillate: true, shapeDistortion: 0.67, coreTexturesEnabled: false, coreTexturesShaderId: 'hologrid-depth-tunnel', palette: 31 },
     Velocity: { motionBlurEnabled: true, haloCometEnabled: true, rotationSyncMode: 'bpm', palette: 33 },
   };
   for (const [name, fields] of Object.entries(expect)) {
@@ -129,6 +129,10 @@ test('Sprint K3 feature presets exist with their hero features and every preset 
     for (const [key, value] of Object.entries(fields)) {
       assert.equal(byName[name][key], value, `${name}.${key}`);
     }
+  }
+  // Sprint N: Core Particles and Core Textures are mutually exclusive in every built-in preset.
+  for (const preset of presets) {
+    assert.ok(!(preset.settings.shapeOscillate && preset.settings.coreTexturesEnabled), `${preset.name} enables both core layers`);
   }
   const palettes = presets.map(p => p.settings.palette);
   assert.equal(new Set(palettes).size, palettes.length, 'every built-in preset must use a distinct palette');
