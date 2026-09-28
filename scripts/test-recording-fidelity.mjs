@@ -21,11 +21,13 @@ function fixImports(file, replacements) {
 
 try {
   transpile('src/app/utils/gifExport.ts', path.join(tempRoot, 'utils/gifExport.js'));
+  transpile('src/app/utils/notify.ts', path.join(tempRoot, 'utils/notify.js'));
   transpile('src/app/engine/recording/RecordingProfiles.ts', path.join(tempRoot, 'engine/recording/RecordingProfiles.js'));
   transpile('src/app/engine/recording/RecordingFramePublisher.ts', path.join(tempRoot, 'engine/recording/RecordingFramePublisher.js'));
   transpile('src/app/engine/RecordingEngine.ts', path.join(tempRoot, 'engine/RecordingEngine.js'));
   fixImports(path.join(tempRoot, 'engine/RecordingEngine.js'), [
     ['../utils/gifExport', '../utils/gifExport.js'],
+    ['../utils/notify', '../utils/notify.js'],
     ['./recording/RecordingFramePublisher', './recording/RecordingFramePublisher.js'],
     ['./recording/RecordingProfiles', './recording/RecordingProfiles.js'],
   ]);

@@ -1,3 +1,4 @@
+import { notify } from '../../../utils/notify';
 type PlaybackControllerDeps = {
   querySelector: (selector: string) => Element | null;
   audioContext: AudioContext;
@@ -67,7 +68,7 @@ export function createPlaybackController({
 
     if (!mediaEl) {
       console.log('ℹ️ No audio loaded yet. Please upload or select a file from the playlist.');
-      alert('⚠️ No audio loaded.\n\nPlease upload an audio file or select one from the playlist.');
+      notify('⚠️ No audio loaded.\n\nPlease upload an audio file or select one from the playlist.');
       return;
     }
 
@@ -105,7 +106,7 @@ export function createPlaybackController({
             console.error('❌ Play error:', e);
             console.error('   Error name:', e.name);
             console.error('   Error message:', e.message);
-            alert(`❌ Playback Error\n\n${e.message}\n\nTry reloading the audio file.`);
+            notify(`❌ Playback Error\n\n${e.message}\n\nTry reloading the audio file.`);
             setIsPlaying(false);
           } else {
             console.log('⚠️ Play aborted (likely interrupted by another play call)');

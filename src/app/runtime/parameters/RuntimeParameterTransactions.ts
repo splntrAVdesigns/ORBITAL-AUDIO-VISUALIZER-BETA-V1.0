@@ -61,7 +61,8 @@ const numericConstraints: Partial<Record<RuntimeParameterKey, NumericConstraint>
   haloCometDirection: { minimum: -1, maximum: 1, integer: true, allowedValues: [-1, 1] },
   haloCometThickness: { minimum: 1, maximum: 10 },
   haloCometTailLength: { minimum: 0.05, maximum: 0.65 },
-  vizMode: { minimum: 0, maximum: 3, integer: true },
+  // Sprint M: only vizMode 0 renders; clamp so MIDI pads 37-39 can no longer blank the ring.
+  vizMode: { minimum: 0, maximum: 0, integer: true },
   glowStrength: { minimum: 0, maximum: 1 },
   dotSize: { minimum: 0.5, maximum: 5 },
   dotGlow: { minimum: 0, maximum: 5 },

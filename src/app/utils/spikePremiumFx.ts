@@ -1,3 +1,4 @@
+import { gammaResponse } from '../runtime/visualizer/color/gammaResponse';
 import { sampleSymmetricSpikeAmplitude } from './spikeSignalChain';
 
 export interface SpikePremiumFxParams {
@@ -269,10 +270,12 @@ function renderGammaEnergy(
   geo: SpikePremiumFxGeometry,
   direction: 1 | -1
 ): void {
-  const gamma = clamp01(params.gamma);
+  const gamma = gammaResponse(params.gamma);
   if (gamma <= 0.01) return;
 
-  const g = Math.pow(gamma, 0.58); // stronger direct-feeling curve than squared gamma
+  // Sprint M: linear Gamma response shared with the WebGL and Canvas2D baseline paths
+  // (was pow(gamma, 0.58)). Identical at slider max; lower positions now scale linearly.
+  const g = gamma;
   const beatFlash = Math.max(state.isBeat ? 1 : 0, clamp01(state.beatPulse));
   const flash = clamp01(beatFlash * 0.60 + state.peakEnergy * 0.48 + state.visualEnvelope * 0.30);
   const metrics = getFxMetrics(buf, params, state, geo, direction, 96);

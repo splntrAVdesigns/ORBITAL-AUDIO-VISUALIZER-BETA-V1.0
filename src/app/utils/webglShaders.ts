@@ -174,7 +174,9 @@ export const spikeRingFragmentShader = `
     
     // PHASE 10F: Gamma is a visual-energy lane, not just amplitude shaping.
     float gammaStrength = clamp(u_gammaFx, 0.0, 1.0);
-    float gammaSquared = gammaStrength * gammaStrength;
+    // Sprint M: Gamma response is linear end-to-end (see runtime/visualizer/color/gammaResponse.ts).
+    // Name kept so every downstream term stays untouched; value is no longer squared.
+    float gammaSquared = gammaStrength;
     float hotTip = smoothstep(0.42, 0.96, v_brightness) * v_tipCoord;
     // Phase 13B: make the Gamma slider visibly useful again as a luminance/tip-energy control.
     float gammaLumLift = gammaSquared * (10.0 + hotTip * 34.0 + u_gammaFlash * 16.0);
@@ -209,6 +211,31 @@ export const spikeRingFragmentShader = `
       0.88
     );
     color = mix(color, fringeColor, fringeMix);
+
+    // Sprint M (Iridize option A): beat-driven chroma wave that travels along each
+    // spike from base (v_tipCoord 0) to tip (1). Read as a whole ring it is a
+    // colorised radial burst growing outward from the centre — no geometry, no
+    // echo copies, confined to the bars themselves.
+    // u_iridizeBeat is colorState.beatPulse: set to 1 on a beat, then decays as
+    // exp(-14 t) (BeatEffectRuntime damp response 14). Inverting that gives the
+    // real seconds since the beat, so the wavefront moves at constant speed:
+    // base -> tip in IRIDIZE_WAVE_SECONDS regardless of frame rate.
+    const float IRIDIZE_WAVE_SECONDS = 0.30;
+    float sinceBeat = -log(max(u_iridizeBeat, 0.0001)) / 14.0;
+    float waveFront = sinceBeat / IRIDIZE_WAVE_SECONDS;
+    if (iridizeStrength > 0.001 && waveFront < 1.15) {
+      float waveOffset = (v_tipCoord - waveFront) / 0.13; // pow() is undefined for negative bases in GLSL
+      float waveBand = exp(-waveOffset * waveOffset);
+      float waveFade = 1.0 - smoothstep(0.55, 1.15, waveFront);
+      float waveHue = fract(hue + 0.18 + waveFront * 0.45 + u_iridizeTime * 0.04);
+      vec3 waveColor = hsl2rgb(vec3(
+        waveHue,
+        clamp((u_saturation + 30.0) / 100.0, 0.0, 1.0),
+        clamp((u_lightness + 22.0) / 100.0, 0.0, 1.0)
+      ));
+      float waveMix = clamp(waveBand * waveFade * iridizeStrength * 0.9, 0.0, 0.85);
+      color = mix(color, waveColor, waveMix) + waveColor * waveMix * 0.25;
+    }
     
     // Apply brightness from amplitude, plus tip-only gamma energy flash.
     float gammaTipEnergy = 1.0 + u_gammaTipBoost * hotTip * (1.05 + u_gammaFlash * 0.95);

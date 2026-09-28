@@ -5,9 +5,11 @@
  */
 
 import type { ShaderPreset, AudioData, ShaderParams } from '../ShaderRegistry';
+import { abandonProgramBuild, finishProgramBuild, isProgramBuildComplete, startProgramBuild, type PendingProgramBuild } from '../parallelProgramBuild';
 
 let gl: WebGLRenderingContext | null = null;
 let program: WebGLProgram | null = null;
+let build: PendingProgramBuild | null = null; // Sprint M1: non-blocking compile in flight
 let positionBuffer: WebGLBuffer | null = null;
 let positionLocation: number = -1; // cached in init() — avoids per-frame driver lookup
 let timeUniform: WebGLUniformLocation | null = null;
@@ -125,6 +127,33 @@ function compileShader(gl: WebGLRenderingContext, type: number, source: string):
   return shader;
 }
 
+function finalizeBuild(): void {
+  if (!gl || !build || !isProgramBuildComplete(gl, build)) return;
+  program = finishProgramBuild(gl, build, 'Plasma Sphere');
+  build = null;
+  if (!program) return;
+    // Create full-screen quad
+    positionBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+    const positions = new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]);
+    gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
+    
+    // Cache attribute location once — avoids a driver hashtable lookup every frame
+    positionLocation = gl.getAttribLocation(program, 'a_position');
+
+    // Cache uniform locations
+    timeUniform = gl.getUniformLocation(program, 'u_time');
+    resolutionUniform = gl.getUniformLocation(program, 'u_resolution');
+    audioUniform = gl.getUniformLocation(program, 'u_audio');
+    colorUniform = gl.getUniformLocation(program, 'u_color');
+    speedUniform = gl.getUniformLocation(program, 'u_speed');
+    complexityUniform = gl.getUniformLocation(program, 'u_complexity');
+    plasmaDepthUniform = gl.getUniformLocation(program, 'u_plasmaDepth');
+    corePullUniform = gl.getUniformLocation(program, 'u_corePull');
+    swirlAmountUniform = gl.getUniformLocation(program, 'u_swirlAmount');
+    audioExpansionUniform = gl.getUniformLocation(program, 'u_audioExpansion');
+}
+
 export const PlasmaSphereShader: ShaderPreset = {
   id: 'plasma-sphere',
   name: 'Plasma Sphere',
@@ -175,49 +204,13 @@ export const PlasmaSphereShader: ShaderPreset = {
     gl = canvas.getContext('webgl', { alpha: true, premultipliedAlpha: false }) as WebGLRenderingContext | null;
     if (!gl) return;
     
-    const vertexShader = compileShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
-    const fragmentShader = compileShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
-    
-    if (!vertexShader || !fragmentShader) {
-      console.error('Failed to compile Plasma Sphere shaders');
-      return;
-    }
-    
-    program = gl.createProgram();
-    if (!program) return;
-    
-    gl.attachShader(program, vertexShader);
-    gl.attachShader(program, fragmentShader);
-    gl.linkProgram(program);
-    
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-      console.error('Program link error:', gl.getProgramInfoLog(program));
-      return;
-    }
-    
-    // Create full-screen quad
-    positionBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-    const positions = new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]);
-    gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
-    
-    // Cache attribute location once — avoids a driver hashtable lookup every frame
-    positionLocation = gl.getAttribLocation(program, 'a_position');
-
-    // Cache uniform locations
-    timeUniform = gl.getUniformLocation(program, 'u_time');
-    resolutionUniform = gl.getUniformLocation(program, 'u_resolution');
-    audioUniform = gl.getUniformLocation(program, 'u_audio');
-    colorUniform = gl.getUniformLocation(program, 'u_color');
-    speedUniform = gl.getUniformLocation(program, 'u_speed');
-    complexityUniform = gl.getUniformLocation(program, 'u_complexity');
-    plasmaDepthUniform = gl.getUniformLocation(program, 'u_plasmaDepth');
-    corePullUniform = gl.getUniformLocation(program, 'u_corePull');
-    swirlAmountUniform = gl.getUniformLocation(program, 'u_swirlAmount');
-    audioExpansionUniform = gl.getUniformLocation(program, 'u_audioExpansion');
+    // Sprint M1: kick off compile+link without reading status (non-blocking);
+    // program, buffers and uniform locations are finalized in render() once ready.
+    build = startProgramBuild(gl, vertexShaderSource, fragmentShaderSource);
   },
   
   render(audioData: AudioData, params: ShaderParams, time: number) {
+    if (build) finalizeBuild();
     if (!gl || !program) return;
     
     gl.useProgram(program);
@@ -255,6 +248,8 @@ export const PlasmaSphereShader: ShaderPreset = {
   },
   
   cleanup() {
+    if (gl && build) abandonProgramBuild(gl, build);
+    build = null;
     if (gl && program) {
       gl.deleteProgram(program);
     }

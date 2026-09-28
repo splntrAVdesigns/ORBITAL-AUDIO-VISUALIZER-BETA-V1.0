@@ -4,9 +4,11 @@
  * one owned WebGL canvas, no React, no DOM observers, and no private RAF.
  */
 import type { AudioData, ShaderParams, ShaderPreset } from '../ShaderRegistry';
+import { abandonProgramBuild, finishProgramBuild, isProgramBuildComplete, startProgramBuild, type PendingProgramBuild } from '../parallelProgramBuild';
 
 let gl: WebGLRenderingContext | null = null;
 let program: WebGLProgram | null = null;
+let build: PendingProgramBuild | null = null; // Sprint M1: non-blocking compile in flight
 let positionBuffer: WebGLBuffer | null = null;
 let positionLocation = -1;
 const uniforms: Record<string, WebGLUniformLocation | null> = {};
@@ -166,6 +168,17 @@ function archetypeIndex(value: unknown): number {
 function uniform1f(name: string, value: number): void { if (gl && uniforms[name]) gl.uniform1f(uniforms[name], value); }
 function uniform3f(name: string, color: [number, number, number]): void { if (gl && uniforms[name]) gl.uniform3f(uniforms[name], color[0], color[1], color[2]); }
 
+function finalizeBuild(): void {
+  if (!gl || !build || !isProgramBuildComplete(gl, build)) return;
+  program = finishProgramBuild(gl, build, 'Cosmic Orb');
+  build = null;
+  if (!program) return;
+    positionBuffer = gl.createBuffer(); if (!positionBuffer) return;
+    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+    positionLocation = gl.getAttribLocation(program, 'a_position');
+    for (const name of ['u_resolution', 'u_anchor', 'u_colorA', 'u_colorB', 'u_colorC', 'u_time', 'u_audio', 'u_treble', 'u_pulse', 'u_archetype', 'u_scale', 'u_orbitalPhase', 'u_spinPhase', 'u_density', 'u_stars', 'u_lens', 'u_paletteSpread', 'u_voidDepth', 'u_rimDensity', 'u_rimColorPull', 'u_starParallax', 'u_depthOfField']) uniforms[name] = gl.getUniformLocation(program, name);
+}
+
 export const CosmicOrbShader: ShaderPreset = {
   id: 'cosmic-orb', name: 'Cosmic Orb', description: 'Audio-reactive nebular orb with archetypal depth fields',
   thumbnail: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Crect fill="%23060a1c" width="100" height="100"/%3E%3CradialGradient id="g" cx="50%25" cy="50%25" r="50%25"%3E%3Cstop stop-color="%23c4f3ff"/%3E%3Cstop offset=".35" stop-color="%2338bdf8"/%3E%3Cstop offset=".72" stop-color="%236366f1"/%3E%3Cstop offset="1" stop-color="%23060a1c"/%3E%3C/radialGradient%3E%3Ccircle cx="50" cy="50" r="43" fill="url(%23g)"/%3E%3C/svg%3E',
@@ -193,19 +206,13 @@ export const CosmicOrbShader: ShaderPreset = {
   init(canvas) {
     gl = canvas.getContext('webgl', { alpha: true, premultipliedAlpha: false, antialias: false }) as WebGLRenderingContext | null;
     if (!gl) return;
-    const vertex = compile(gl.VERTEX_SHADER, vertexSource), fragment = compile(gl.FRAGMENT_SHADER, fragmentSource);
-    if (!vertex || !fragment) return;
-    program = gl.createProgram(); if (!program) return;
-    gl.attachShader(program, vertex); gl.attachShader(program, fragment); gl.linkProgram(program);
-    gl.deleteShader(vertex); gl.deleteShader(fragment);
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) { gl.deleteProgram(program); program = null; return; }
-    positionBuffer = gl.createBuffer(); if (!positionBuffer) return;
-    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
-    positionLocation = gl.getAttribLocation(program, 'a_position');
-    for (const name of ['u_resolution', 'u_anchor', 'u_colorA', 'u_colorB', 'u_colorC', 'u_time', 'u_audio', 'u_treble', 'u_pulse', 'u_archetype', 'u_scale', 'u_orbitalPhase', 'u_spinPhase', 'u_density', 'u_stars', 'u_lens', 'u_paletteSpread', 'u_voidDepth', 'u_rimDensity', 'u_rimColorPull', 'u_starParallax', 'u_depthOfField']) uniforms[name] = gl.getUniformLocation(program, name);
+    // Sprint M1: kick off compile+link without reading status (non-blocking);
+    // program, buffer and uniform locations are finalized in render() once ready.
+    build = startProgramBuild(gl, vertexSource, fragmentSource);
     activeArchetype = -1; smoothAudio = 0; smoothTreble = 0; smoothPulse = 0; orbitalPhase = { anchor: 0, anchorAt: 0, rate: 0 }; spinPhase = { anchor: 0, anchorAt: 0, rate: 0 };
   },
   render(audio, params, time) {
+    if (build) finalizeBuild();
     if (!gl || !program || !positionBuffer) return;
     // A user-selected archetype is authoritative and persists. Only explicit
     // Auto (-1) delegates variation to the shader's slow automatic cycle.
@@ -237,5 +244,5 @@ export const CosmicOrbShader: ShaderPreset = {
     gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT); gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   },
   resize(width, height) { gl?.viewport(0, 0, width, height); },
-  cleanup() { if (gl && program) gl.deleteProgram(program); if (gl && positionBuffer) gl.deleteBuffer(positionBuffer); gl = null; program = null; positionBuffer = null; positionLocation = -1; activeArchetype = -1; smoothAudio = 0; smoothTreble = 0; smoothPulse = 0; orbitalPhase = { anchor: 0, anchorAt: 0, rate: 0 }; spinPhase = { anchor: 0, anchorAt: 0, rate: 0 }; Object.keys(uniforms).forEach(key => { uniforms[key] = null; }); },
+  cleanup() { if (gl && build) abandonProgramBuild(gl, build); build = null; if (gl && program) gl.deleteProgram(program); if (gl && positionBuffer) gl.deleteBuffer(positionBuffer); gl = null; program = null; positionBuffer = null; positionLocation = -1; activeArchetype = -1; smoothAudio = 0; smoothTreble = 0; smoothPulse = 0; orbitalPhase = { anchor: 0, anchorAt: 0, rate: 0 }; spinPhase = { anchor: 0, anchorAt: 0, rate: 0 }; Object.keys(uniforms).forEach(key => { uniforms[key] = null; }); },
 };

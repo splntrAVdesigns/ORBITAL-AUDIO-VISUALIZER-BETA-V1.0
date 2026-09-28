@@ -8,6 +8,7 @@ import {
   validateCenterMediaAggregateResource,
   validateCenterMediaDimensions,
 } from '../config/resourceLimits';
+import { notify } from '../utils/notify';
 
 export type CenterImage = {
   url: string;
@@ -408,12 +409,12 @@ export class CenterGraphicController {
       const isValidImage = VALID_IMAGE_TYPES.includes(file.type) || isImageFile(file);
       const isValidVideo = VALID_VIDEO_TYPES.includes(file.type) || isVideoFile(file);
       if (!isValidImage && !isValidVideo) {
-        alert(`❌ Invalid file type: ${file.name}\n\nAccepted formats:\nImages: JPG, PNG, GIF, WebP\nVideos: MP4, WebM, MOV`);
+        notify(`❌ Invalid file type: ${file.name}\n\nAccepted formats:\nImages: JPG, PNG, GIF, WebP\nVideos: MP4, WebM, MOV`);
         input.value = '';
         return;
       }
       if (file.size <= 0 || file.size > CENTER_MEDIA_MAX_FILE_BYTES) {
-        alert(`❌ File rejected: ${file.name}\n\nFile size: ${(file.size / 1024 / 1024).toFixed(1)}MB\nMaximum allowed: ${formatResourceBytes(CENTER_MEDIA_MAX_FILE_BYTES)}`);
+        notify(`❌ File rejected: ${file.name}\n\nFile size: ${(file.size / 1024 / 1024).toFixed(1)}MB\nMaximum allowed: ${formatResourceBytes(CENTER_MEDIA_MAX_FILE_BYTES)}`);
         input.value = '';
         return;
       }
@@ -426,7 +427,7 @@ export class CenterGraphicController {
     const incomingBytes = acceptedFiles.reduce((total, file) => total + file.size, 0);
     const aggregateValidation = validateCenterMediaAggregateResource(retainedBytes, incomingBytes);
     if (!aggregateValidation.valid) {
-      alert(`❌ Center media rejected\n\n${aggregateValidation.reason}`);
+      notify(`❌ Center media rejected\n\n${aggregateValidation.reason}`);
       input.value = '';
       return;
     }
@@ -458,7 +459,7 @@ export class CenterGraphicController {
     const support = video.canPlayType(probeMime);
     if (support === '' && !['video/quicktime', 'video/x-m4v'].includes(probeMime)) {
       URL.revokeObjectURL(url);
-      alert(`⚠️ This browser cannot decode ${file.name}.\n\nTry MP4 with H.264/AAC or WebM with VP8/VP9.`);
+      notify(`⚠️ This browser cannot decode ${file.name}.\n\nTry MP4 with H.264/AAC or WebM with VP8/VP9.`);
       return;
     }
 
@@ -481,7 +482,7 @@ export class CenterGraphicController {
       } else {
         errorMsg += 'Unknown error - video failed to load';
       }
-      alert(errorMsg);
+      notify(errorMsg);
       this.deleteSlot(index);
     });
 
@@ -490,7 +491,7 @@ export class CenterGraphicController {
       if (video.videoWidth > 0 && video.videoHeight > 0 && slot) {
         const validation = validateCenterMediaDimensions(video.videoWidth, video.videoHeight, video.duration);
         if (!validation.valid) {
-          alert(`❌ ${file.name}: ${validation.reason}`);
+          notify(`❌ ${file.name}: ${validation.reason}`);
           this.deleteSlot(index);
           return;
         }
@@ -500,7 +501,7 @@ export class CenterGraphicController {
         ), 0);
         const aggregateValidation = validateCenterMediaAggregateResource(0, 0, retainedPixels, decodedPixels);
         if (!aggregateValidation.valid) {
-          alert(`❌ ${file.name}: ${aggregateValidation.reason}`);
+          notify(`❌ ${file.name}: ${aggregateValidation.reason}`);
           this.deleteSlot(index);
           return;
         }
@@ -534,7 +535,7 @@ export class CenterGraphicController {
     this.imageCacheRegistry.set(url, img);
 
     img.onerror = () => {
-      alert(`❌ Could not load image: ${file.name}`);
+      notify(`❌ Could not load image: ${file.name}`);
       this.deleteSlot(index);
     };
     img.onload = () => {
@@ -542,7 +543,7 @@ export class CenterGraphicController {
       if (img.width > 0 && img.height > 0 && slot) {
         const validation = validateCenterMediaDimensions(img.naturalWidth || img.width, img.naturalHeight || img.height);
         if (!validation.valid) {
-          alert(`❌ ${file.name}: ${validation.reason}`);
+          notify(`❌ ${file.name}: ${validation.reason}`);
           this.deleteSlot(index);
           return;
         }
@@ -552,7 +553,7 @@ export class CenterGraphicController {
         ), 0);
         const aggregateValidation = validateCenterMediaAggregateResource(0, 0, retainedPixels, decodedPixels);
         if (!aggregateValidation.valid) {
-          alert(`❌ ${file.name}: ${aggregateValidation.reason}`);
+          notify(`❌ ${file.name}: ${aggregateValidation.reason}`);
           this.deleteSlot(index);
           return;
         }

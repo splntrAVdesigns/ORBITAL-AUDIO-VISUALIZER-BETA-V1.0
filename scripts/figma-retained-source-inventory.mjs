@@ -62,10 +62,6 @@ export const FIGMA_RETAINED_INACTIVE_SOURCE = Object.freeze([
   'src/app/runtime/visualizer/kernel/index.ts',
   'src/app/runtime/visualizer/session/createRuntimeFrameAuthority.ts',
   // User-provided prospective shader references; imports are read-only until approved for integration.
-  'src/imports/pasted_text/cosmic-orb.tsx',
-  'src/imports/pasted_text/pixel-led-display.tsx',
-  'src/imports/pasted_text/blinking-squares.tsx',
-  'src/imports/pasted_text/chromatic-waves.tsx',
 ]);
 
 export const REQUIRED_ACTIVE_SOURCE = Object.freeze([

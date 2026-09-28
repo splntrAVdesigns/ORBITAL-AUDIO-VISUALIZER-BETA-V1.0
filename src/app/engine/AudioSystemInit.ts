@@ -28,6 +28,8 @@ import {
   validateBpmAnalysisResource,
   validateDecodedBpmAudioResource,
 } from '../config/resourceLimits';
+import { notify } from '../utils/notify';
+import { installAudioContextRecovery } from './audioContextRecovery';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -181,6 +183,9 @@ export function initAudioSystem(opts: AudioSystemInitOptions): AudioSystemResult
     console.error('❌ Analyser initialization error:', e);
     return null;
   }
+
+  // Sprint M2: recover from browser/OS suspension or Safari 'interrupted' state.
+  const audioContextRecovery = installAudioContextRecovery(AC, { debug: debugAudio });
 
   // ── Audio Limiter ─────────────────────────────────────────────────────────────
   let audioLimiter: DynamicsCompressorNode | null = null;
@@ -493,10 +498,10 @@ export function initAudioSystem(opts: AudioSystemInitOptions): AudioSystemResult
 
       if (wasMonitorEnabled) {
         setTimeout(() => {
-          alert('🎤 MICROPHONE ENABLED\n\n' +
+          notify('🎤 MICROPHONE ENABLED\n\n' +
             '⚠️ Monitor has been automatically disabled to prevent audio feedback.\n\n' +
             'This safeguard prevents your speakers from creating a feedback loop with the microphone.\n\n' +
-            'You can re-enable Monitor after switching back to audio playback.');
+            'You can re-enable Monitor after switching back to audio playback.', { tone: 'warning' });
         }, 100);
       }
       setTimeout(() => {
@@ -518,7 +523,7 @@ export function initAudioSystem(opts: AudioSystemInitOptions): AudioSystemResult
       else if (e.name === 'OverconstrainedError') msg += 'MICROPHONE SETTINGS ERROR\nTry a different microphone.';
       else if (e.name === 'SecurityError')        msg += 'SECURITY ERROR\nMicrophone access blocked. Ensure you\'re on HTTPS.';
       else                                        msg += `UNKNOWN ERROR: ${e.name}\n${e.message}\nTry refreshing the page.`;
-      alert(msg);
+      notify(msg);
     }
   }
 
@@ -634,7 +639,7 @@ export function initAudioSystem(opts: AudioSystemInitOptions): AudioSystemResult
         cancelPendingMediaLoad = cancel;
         newEl.addEventListener('loadedmetadata', onMetadata, { once: true });
         newEl.addEventListener('error', onError, { once: true });
-        newEl.addEventListener('play',  () => { AC.resume(); if (window.setIsAudioPlaying) window.setIsAudioPlaying(true); });
+        newEl.addEventListener('play',  () => { AC.resume().catch(() => undefined); if (window.setIsAudioPlaying) window.setIsAudioPlaying(true); });
         newEl.addEventListener('pause', () => { if (window.setIsAudioPlaying) window.setIsAudioPlaying(false); });
         newEl.addEventListener('timeupdate', () => {
           if (getMediaEl() !== newEl) return;
@@ -690,7 +695,7 @@ export function initAudioSystem(opts: AudioSystemInitOptions): AudioSystemResult
         setMediaEl(null);
         window.mediaEl = null;
       }
-      alert(`❌ Failed to load audio file\n\n${e instanceof Error ? e.message : String(e)}`);
+      notify(`❌ Failed to load audio file\n\n${e instanceof Error ? e.message : String(e)}`);
       throw e;
     }
   }
@@ -698,6 +703,7 @@ export function initAudioSystem(opts: AudioSystemInitOptions): AudioSystemResult
   // ── dispose ───────────────────────────────────────────────────────────────────
   function dispose(): void {
     disposed = true;
+    audioContextRecovery.dispose();
     mediaLoadRevision += 1;
     cancelPendingMediaLoad?.();
     cancelPendingMediaLoad = null;

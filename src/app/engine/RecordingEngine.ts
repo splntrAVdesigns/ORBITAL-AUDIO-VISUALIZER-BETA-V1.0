@@ -18,6 +18,7 @@ import type {
   RecordingStartOptions,
   RecordingToggleResult,
 } from './recording/RecordingRuntimeController';
+import { notify } from '../utils/notify';
 
 export const MAX_RECORDINGS = 8;
 export const MAX_RECORDING_LIBRARY_BYTES = 384 * 1024 * 1024;
@@ -546,7 +547,7 @@ export class RecordingEngine {
       },
       onError: (error: Error) => {
         console.error('GIF Export Error:', error);
-        alert(`GIF Export Failed: ${error.message}`);
+        notify(`GIF Export Failed: ${error.message}`);
         this.resetGIFUI();
       },
     });

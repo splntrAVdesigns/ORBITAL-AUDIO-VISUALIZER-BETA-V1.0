@@ -1,3 +1,4 @@
+import { notify } from './notify';
 // Browser Compatibility Check Utility
 // Extracted from App.tsx for better organization
 
@@ -64,7 +65,7 @@ export const safeLocalStorage = {
     } catch (e) {
       console.warn(`localStorage.setItem failed for key "${key}":`, e);
       // Show user notification
-      alert('⚠️ Settings could not be saved. Your browser may have localStorage disabled or storage quota exceeded.');
+      notify('⚠️ Settings could not be saved. Your browser may have localStorage disabled or storage quota exceeded.');
       return false;
     }
   }

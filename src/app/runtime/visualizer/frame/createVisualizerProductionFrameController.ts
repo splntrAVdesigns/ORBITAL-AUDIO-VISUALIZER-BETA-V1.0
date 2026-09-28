@@ -1,3 +1,4 @@
+import { gammaLuminancePulse } from '../color/gammaResponse';
 import type { VisualizerRuntimeBindings } from '../VisualizerRuntimeBindings';
 import type { AudioRuntimeSetup } from '../audio/createAudioRuntimeSetup';
 import type { createVisualizerFeatureSession } from '../session/createVisualizerFeatureSession';
@@ -1360,15 +1361,21 @@ export function createVisualizerProductionFrameController(
       } else if (gl) {
         webglSpikeRenderer?.clear();
       }
-      // PHASE 8: Only draw Canvas2D spike baseline when no GPU spike/core-particle engine owns the layer.
-      // Previously core particles disabled legacy WebGL spikes but Canvas2D spikes could still draw,
-      // causing overlapped ring systems and a smeared/fighting visual response.
+      // Spike-ring ownership (Sprint M — comment corrected to match shipped behaviour):
+      //  • Legacy WebGL spikes own the ring when they are allowed (vizMode 0, GL available,
+      //    and core particles NOT active). This is the default path for most presets.
+      //  • Canvas2D draws the spike ring whenever legacy WebGL spikes are not drawing it —
+      //    that includes the core-particles path, where the GPU engine owns the particle
+      //    layer only and the ring still comes from Canvas2D. Legacy WebGL spikes are
+      //    already suppressed there (see legacyWebGLSpikeAllowed), so the two ring systems
+      //    never overlap. The `|| useEngineOwnedGL` term is therefore redundant but kept
+      //    explicit to document that core particles always keep the Canvas2D ring.
       const webglSpikeActive = !!legacyWebGLSpikeAllowed;
       const canvas2DSpikeBaselineActive = params.vizMode === 0 && (!webglSpikeActive || useEngineOwnedGL);
 
       if (canvas2DSpikeBaselineActive) {
-        const fallbackGamma = params.gamma * params.gamma;
-        const fallbackGammaPulse = 1 + fallbackGamma * 0.15 * Math.sin(t * 3.5);
+        // Sprint M: linear Gamma response shared with every spike-ring consumer.
+        const fallbackGammaPulse = gammaLuminancePulse(params.gamma, t);
         canvasFallbackGammaLum = Math.min(88, lumBase * fallbackGammaPulse);
         ctx.save();
         ctx.globalCompositeOperation = "lighter";

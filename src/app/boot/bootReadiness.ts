@@ -8,20 +8,22 @@
  *   viewport  canvas stage measured and committed            (SessionBootSequence)
  *   ui        controls synced to defaults, readouts bound    (SessionBootSequence)
  *   frame     the frame scheduler has presented frames       (SessionBootSequence)
+ *   shaders   GPU programs pre-compiled behind the loader     (SessionBootSequence, Sprint M1)
  *   fonts     document fonts settled                         (OrbitalBoot)
  *
  * Plain external store (no React dependency) so the runtime can mark stages
  * without importing UI code.
  */
-export type BootStage = 'shell' | 'viewport' | 'ui' | 'frame' | 'fonts';
+export type BootStage = 'shell' | 'viewport' | 'ui' | 'frame' | 'shaders' | 'fonts';
 
-export const BOOT_STAGES: readonly BootStage[] = ['shell', 'viewport', 'ui', 'frame', 'fonts'];
+export const BOOT_STAGES: readonly BootStage[] = ['shell', 'viewport', 'ui', 'frame', 'shaders', 'fonts'];
 
 export const BOOT_STAGE_LABELS: Record<BootStage, string> = {
   shell: 'Loading visual engine',
   viewport: 'Measuring stage',
   ui: 'Syncing controls',
   frame: 'Rendering first frames',
+  shaders: 'Warming GPU shaders',
   fonts: 'Finishing up',
 };
 

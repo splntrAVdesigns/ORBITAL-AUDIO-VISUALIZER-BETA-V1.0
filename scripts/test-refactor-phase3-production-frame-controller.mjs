@@ -66,7 +66,7 @@ const frameBody = extractFunction(controller, 'executeVisualFramePipeline');
 const frameHash = crypto.createHash('sha256').update(frameBody).digest('hex');
 const sessionLines = session.split(/\r?\n/).length;
 
-check('production frame body remains byte-identical', frameHash === 'fe90378e0b3f3d6bc3535c31652ca79b81ce3290c769923da13bee9e8a5d0d35', frameHash);
+check('production frame body remains byte-identical', frameHash === '782e7648778ac434472791ea52145d03d7cf9a5783626786fe6045c545adc5e4' /* Sprint M re-certified (was fe90378e0b3f…, Sprint H) */, frameHash);
 check('session entry point is reduced below the Phase 3 budget', sessionLines <= 800, `${sessionLines} lines`);
 check('session composes exactly one production frame controller', (session.match(/createVisualizerProductionFrameController\(/g) || []).length === 1);
 check('production frame implementation left the session entry point', !session.includes('function executeVisualFramePipeline('));

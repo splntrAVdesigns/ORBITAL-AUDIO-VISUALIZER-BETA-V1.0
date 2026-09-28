@@ -7,6 +7,7 @@ import {
   validateSettingsImportResource,
 } from '../config/resourceLimits';
 import { syncLiquidShapeSelect, type ShapeType } from '../utils/astralShaper';
+import { notify } from '../utils/notify';
 
 const PARAM_IDS = ['gain','smoothing','motionIntensity','motionSmoothing','bassBoost','rotationSpeed','effectAmount','darkStrobeDepth','darkStrobeDisplacement','motionBlurAmount','iridizeAmount','colorWaveAmount','saturationBurstAmount'] as const;
 const SELECT_IDS = ['beatPulseType', 'astralShape'] as const;
@@ -64,7 +65,7 @@ export function exportOrbitalSettings() {
 export function importOrbitalSettings(file: File) {
   const fileValidation = validateSettingsImportResource(file);
   if (!fileValidation.valid) {
-    alert(`❌ ${fileValidation.reason}`);
+    notify(`❌ ${fileValidation.reason}`);
     return;
   }
   const reader = new FileReader();
@@ -72,12 +73,12 @@ export function importOrbitalSettings(file: File) {
     try {
       const data: unknown = JSON.parse(String(event.target?.result ?? ''));
       if (!data || typeof data !== 'object' || Array.isArray(data)) {
-        alert('❌ Invalid settings file format.');
+        notify('❌ Invalid settings file format.');
         return;
       }
       const record = data as { version?: unknown; params?: unknown; customPresets?: unknown };
       if (record.version !== '1.0.0' || !record.params || typeof record.params !== 'object' || Array.isArray(record.params)) {
-        alert('❌ Invalid or unsupported settings file format.');
+        notify('❌ Invalid or unsupported settings file format.');
         return;
       }
 
@@ -113,22 +114,23 @@ export function importOrbitalSettings(file: File) {
       if (record.customPresets !== undefined) {
         const presetValidation = validateCustomPresetResource(record.customPresets);
         if (!presetValidation.valid) {
-          alert(`❌ ${presetValidation.reason}`);
+          notify(`❌ ${presetValidation.reason}`);
           return;
         }
         const customPresets = record.customPresets as unknown[];
         safeLocalStorage.setItem('orbitalCustomPresets', JSON.stringify(customPresets));
         if (DEBUG_FLAGS.GENERAL) console.log(`✅ Imported ${customPresets.length} custom preset(s)`);
         if (customPresets.length > 0) {
-          alert(`✅ Settings and ${customPresets.length} custom preset(s) imported successfully!\n\nThe page will reload to apply custom presets.`);
+          notify(`✅ Settings and ${customPresets.length} custom preset(s) imported successfully!\n\nThe page will reload to apply custom presets.`);
           markUserRequestedReload('settings-import');
-          window.setTimeout(() => window.location.reload(), 500);
+          // Sprint M3: toast is non-blocking, so give it time to be read before reload.
+          window.setTimeout(() => window.location.reload(), 1800);
           return;
         }
       }
-      alert('✅ Settings imported successfully!');
+      notify('✅ Settings imported successfully!');
     } catch {
-      alert('❌ Failed to import settings. Invalid JSON file.');
+      notify('❌ Failed to import settings. Invalid JSON file.');
     }
   };
   reader.readAsText(file);

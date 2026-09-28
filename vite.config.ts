@@ -27,6 +27,22 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  build: {
+    // Sprint M5: React-level lazy loading is intentionally blocked (controllers bind
+    // to eagerly mounted #ids; see verify-dist-output.mjs). Split stable third-party
+    // code into long-cached vendor chunks instead, so a new deploy only re-downloads
+    // application code, and browsers fetch the chunks in parallel.
+    rollupOptions: {
+      output: {
+        manualChunks(id: string) {
+          if (!id.includes('node_modules')) return undefined
+          if (/[\\/]node_modules[\\/](react|react-dom|scheduler)[\\/]/.test(id)) return 'vendor-react'
+          if (/[\\/]node_modules[\\/](motion|motion-dom|motion-utils|framer-motion)[\\/]/.test(id)) return 'vendor-motion'
+          return 'vendor'
+        },
+      },
+    },
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src/app'),

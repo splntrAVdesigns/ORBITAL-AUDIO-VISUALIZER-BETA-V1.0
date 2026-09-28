@@ -20,6 +20,7 @@ import { AudioMetadataStrip } from './AudioMetadataStrip';
 import { setControlPanelAudioTab, useControlPanelAudioTab } from '../runtime/controlPanelRuntimeStore';
 import { validateAudioTrackResource } from '../config/resourceLimits';
 import { safeLocalStorage } from '../utils/browserCompat';
+import { notify } from '../utils/notify';
 
 const CONTROL_PANEL_DEBUG = Boolean((import.meta as any)?.env?.DEV && typeof window !== 'undefined' && (window as any).__ORBITAL_DEBUG_CONTROLS__);
 const devLog = (...args: any[]) => { if (CONTROL_PANEL_DEBUG) console.log(...args); };
@@ -376,11 +377,11 @@ export const ControlPanel = memo(function ControlPanel(props: ControlPanelProps)
                 }
                 
                 if (newTracks.length === 0) {
-                  alert(`❌ No valid audio files selected.\n\n${rejectedFiles.slice(0, 4).join('\n') || 'Accepted formats: MP3, WAV, AIFF, M4A, OGG, FLAC'}`);
+                  notify(`❌ No valid audio files selected.\n\n${rejectedFiles.slice(0, 4).join('\n') || 'Accepted formats: MP3, WAV, AIFF, M4A, OGG, FLAC'}`);
                   e.target.value = '';
                   return;
                 }
-                if (rejectedFiles.length > 0) alert(`⚠️ Some files were skipped:\n\n${rejectedFiles.slice(0, 4).join('\n')}`);
+                if (rejectedFiles.length > 0) notify(`⚠️ Some files were skipped:\n\n${rejectedFiles.slice(0, 4).join('\n')}`);
                 
                 devLog('✅ New tracks created:', newTracks.length);
                 
@@ -396,7 +397,7 @@ export const ControlPanel = memo(function ControlPanel(props: ControlPanelProps)
                     setCurrentTrackIndex(0);
                   } catch (err: any) {
                     devError('❌ Error loading first track:', err);
-                    alert(err.message);
+                    notify(err.message);
                   }
                 }
                 
@@ -414,7 +415,7 @@ export const ControlPanel = memo(function ControlPanel(props: ControlPanelProps)
               // Check file type with extension fallback
               if (!isSupportedAudioFile(f)) {
                 devError('❌ Invalid file type');
-                alert(`❌ Invalid audio file type: ${f.name}\n\nAccepted formats: MP3, WAV, AIFF, M4A, OGG, FLAC`);
+                notify(`❌ Invalid audio file type: ${f.name}\n\nAccepted formats: MP3, WAV, AIFF, M4A, OGG, FLAC`);
                 e.target.value = '';
                 return;
               }
@@ -451,7 +452,7 @@ export const ControlPanel = memo(function ControlPanel(props: ControlPanelProps)
                 devLog('✅ Single file loaded and added to playlist');
               } catch (err: any) {
                 devError('❌ Error loading file:', err);
-                alert(err.message);
+                notify(err.message);
               }
               
               e.target.value = '';
@@ -894,7 +895,7 @@ export const ControlPanel = memo(function ControlPanel(props: ControlPanelProps)
                     }
                   }
                 }
-                if (rejectedFiles.length > 0) alert(`⚠️ Some files were skipped:\n\n${rejectedFiles.slice(0, 4).join('\n')}`);
+                if (rejectedFiles.length > 0) notify(`⚠️ Some files were skipped:\n\n${rejectedFiles.slice(0, 4).join('\n')}`);
               }}
             >
               {playlist.length === 0 ? (

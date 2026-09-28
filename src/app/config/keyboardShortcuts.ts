@@ -20,7 +20,6 @@ export interface KeyboardShortcutEntry {
 export const KEYBOARD_SHORTCUTS: readonly KeyboardShortcutEntry[] = [
   { keys: 'SPACE', description: 'Play/Pause', section: 'Playback' },
   { keys: 'M', description: 'Mute/Unmute', section: 'Playback' },
-  { keys: '1-4', description: 'Switch modes', section: 'Visualization' },
   { keys: 'C', description: 'Cycle colors', section: 'Visualization' },
   { keys: '↑ / ↓', description: 'Previous / next preset scene', section: 'Visualization' },
   { keys: 'F', description: 'Fullscreen (ESC to exit)', section: 'Visualization' },

@@ -1,3 +1,4 @@
+import { gammaResponse } from '../color/gammaResponse';
 import type { SpikeProgramLocations } from '../../../utils/webglShaders';
 
 const VERTICES_PER_SPIKE = 6;
@@ -153,10 +154,11 @@ export class WebGLSpikeRenderer {
     gl.uniform1f(loc.u_colorWaveAmount, frame.colorWaveAmount);
     gl.uniform1f(loc.u_bloom, frame.bloom);
 
-    const gamma = clamp01(frame.gamma);
+    // Sprint M: one linear Gamma response for FX and tip boost (was gamma² for tips).
+    const gamma = gammaResponse(frame.gamma);
     gl.uniform1f(loc.u_gammaFx, gamma);
     gl.uniform1f(loc.u_gammaFlash, clamp01(frame.gammaFlash));
-    gl.uniform1f(loc.u_gammaTipBoost, gamma * gamma);
+    gl.uniform1f(loc.u_gammaTipBoost, gamma);
     gl.uniform1f(loc.u_iridize, clamp01(frame.iridize));
     gl.uniform1f(loc.u_iridizeTime, frame.iridizeTime);
     gl.uniform1f(loc.u_iridizeBeat, clamp01(frame.beatPulse));

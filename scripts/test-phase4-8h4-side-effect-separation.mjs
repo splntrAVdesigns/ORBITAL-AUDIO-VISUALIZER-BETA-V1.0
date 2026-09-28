@@ -33,7 +33,7 @@ function extractFunction(source, name) {
 const checks = [];
 const check = (name, ok, detail='') => checks.push({ name, ok: Boolean(ok), detail });
 const frameHash = crypto.createHash('sha256').update(extractFunction(frameController, 'executeVisualFramePipeline')).digest('hex');
-const parityHash = 'fe90378e0b3f3d6bc3535c31652ca79b81ce3290c769923da13bee9e8a5d0d35';
+const parityHash = '782e7648778ac434472791ea52145d03d7cf9a5783626786fe6045c545adc5e4' /* Sprint M re-certified (was fe90378e0b3f…, Sprint H) */;
 
 check('H4 accepts the current parity-reviewed production frame hash', frameHash === parityHash, frameHash);
 check('session imports UI side-effect runtime', session.includes("from './ui/ProductionUISideEffectRuntime'"));

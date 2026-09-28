@@ -117,6 +117,10 @@ const ASYNC_OWNERSHIP = {
     counts: { setTimeout: 0, setInterval: 1, requestAnimationFrame: 0 },
     classification: 'engine-owned cache cleanup interval with dispose',
   },
+  'src/app/utils/notify.ts': {
+    counts: { setTimeout: 1, setInterval: 0, requestAnimationFrame: 0 },
+    classification: 'Sprint M3 toast auto-dismiss; cleared on click-dismiss, element-scoped',
+  },
   'src/app/utils/gifExport.ts': {
     counts: { setTimeout: 3, setInterval: 1, requestAnimationFrame: 1 },
     classification: 'export-only capture/preflight/download cleanup',

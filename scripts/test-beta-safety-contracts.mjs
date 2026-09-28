@@ -114,7 +114,9 @@ assert.match(vercel, /Content-Security-Policy/);
 assert.match(audioSystem, /validateBpmAnalysisResource\(file\.size, durationSeconds, AC\.sampleRate\)/);
 assert.match(audioSystem, /validateDecodedBpmAudioResource\(audioBuffer\.length, audioBuffer\.numberOfChannels\)/);
 assert.match(centerGraphicController, /validateCenterMediaAggregateResource/);
-assert.match(mobileBlocker, /HTTP:\/\/SPLNTR-MICROTOOLS\.COM/);
+// Sprint M4: the QR target is the ORBITAL subdomain over HTTPS (was HTTP://SPLNTR-MICROTOOLS.COM).
+assert.match(mobileBlocker, /https:\/\/orbital-visualizer\.splntr-microtools\.com/);
+assert.doesNotMatch(mobileBlocker, /HTTP:\/\/SPLNTR-MICROTOOLS\.COM/i);
 assert.match(vercel, /https:\/\/api\.qrserver\.com/);
 assert.ok(fs.existsSync(path.join(root, '.gitignore')));
 assert.ok(fs.existsSync(path.join(root, '.nvmrc')));

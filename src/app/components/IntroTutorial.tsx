@@ -64,7 +64,7 @@ export function IntroTutorial({ onClose }: IntroTutorialProps) {
             <div style={{ textAlign: 'left', fontSize: '0.9rem' }}>
               <div style={{ marginBottom: '0.6rem', display: 'flex', alignItems: 'start', gap: '0.5rem' }}>
                 <span style={{ color: '#1E90FF', fontSize: '1rem' }}>▶</span>
-                <span><strong style={{ color: '#b0c9dd' }}>4 Visualization Modes:</strong> Chaos, Storm, Heat, Wave</span>
+                <span><strong style={{ color: '#b0c9dd' }}>25 Curated Presets:</strong> One-click scenes, arrow keys to browse</span>
               </div>
               <div style={{ marginBottom: '0.6rem', display: 'flex', alignItems: 'start', gap: '0.5rem' }}>
                 <span style={{ color: '#1E90FF', fontSize: '1rem' }}>▶</span>

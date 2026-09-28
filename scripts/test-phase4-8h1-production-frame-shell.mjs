@@ -42,6 +42,7 @@ const approvedFrameHashes = new Set([
   'fd109071da343499b79995fa8e3d26514fbbc9d2da522efe1a8dd1ea2834b839', // Phase 2 Liquid Shaper + Dark Strobe top pass
   'e22efba8ebd98f4d8aa8bbd17e6ada36a4d030d49c2d2bc7cee066af981f5274', // Sprint F: Core Particles Spread max-reach trim
   'fe90378e0b3f3d6bc3535c31652ca79b81ce3290c769923da13bee9e8a5d0d35', // Sprint H: Star Field Tunnel background pass
+  '782e7648778ac434472791ea52145d03d7cf9a5783626786fe6045c545adc5e4', // Sprint M: spike-ownership comment + linear Gamma pulse (gammaLuminancePulse)
 ]);
 
 check('authoritative production frame body hash is an approved parity-locked revision', approvedFrameHashes.has(frameHash), frameHash);

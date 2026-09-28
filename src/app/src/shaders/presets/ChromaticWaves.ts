@@ -4,9 +4,11 @@
  * no React, no OGL dependency, and no private animation loop.
  */
 import type { AudioData, ShaderParams, ShaderPreset } from '../ShaderRegistry';
+import { abandonProgramBuild, finishProgramBuild, isProgramBuildComplete, startProgramBuild, type PendingProgramBuild } from '../parallelProgramBuild';
 
 let gl: WebGLRenderingContext | null = null;
 let program: WebGLProgram | null = null;
+let build: PendingProgramBuild | null = null; // Sprint M1: non-blocking compile in flight
 let buffer: WebGLBuffer | null = null;
 let positionLocation = -1;
 const uniforms: Record<string, WebGLUniformLocation | null> = {};
@@ -51,6 +53,19 @@ function hsl(hue: number, saturation: number, lightness: number): [number,number
 function u1(name:string,value:number){if(gl&&uniforms[name])gl.uniform1f(uniforms[name],value);}
 function u3(name:string,value:[number,number,number]){if(gl&&uniforms[name])gl.uniform3f(uniforms[name],value[0],value[1],value[2]);}
 
+function finalizeBuild(): void {
+  if(!gl||!build||!isProgramBuildComplete(gl,build))return;
+  program=finishProgramBuild(gl,build,'Chromatic Waves');
+  build=null;
+  if(!program)return;
+  buffer=gl.createBuffer();
+  if(!buffer)return;
+  gl.bindBuffer(gl.ARRAY_BUFFER,buffer);
+  gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
+  positionLocation=gl.getAttribLocation(program,'a_position');
+  for(const name of ['u_resolution','u_a','u_b','u_c','u_d','u_time','u_audio','u_frequency','u_speed','u_contrast','u_cell','u_gamma','u_bias','u_dotDensity'])uniforms[name]=gl.getUniformLocation(program,name);
+}
+
 export const ChromaticWavesShader: ShaderPreset = {
   id:'chromatic-waves', name:'Chromatic Waves', description:'Living chromatic noise resolved through a halftone dot-matrix field',
   thumbnail:'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Crect fill="%230a0b18" width="100" height="100"/%3E%3Cg fill="%235bf4ff"%3E%3Ccircle cx="16" cy="22" r="5"/%3E%3Ccircle cx="44" cy="18" r="8"/%3E%3Ccircle cx="76" cy="26" r="6"/%3E%3Ccircle cx="24" cy="60" r="9"/%3E%3Ccircle cx="55" cy="56" r="5"/%3E%3Ccircle cx="80" cy="72" r="10"/%3E%3C/g%3E%3C/svg%3E',
@@ -66,8 +81,14 @@ export const ChromaticWavesShader: ShaderPreset = {
     chromaticDotDensity:{type:'slider',label:'Dot Density',min:.25,max:1,step:.05,default:.82},
     chromaticAudioWave:{type:'slider',label:'Audio Wave',min:0,max:2,step:.05,default:.72},
   },
-  init(canvas){gl=canvas.getContext('webgl',{alpha:true,premultipliedAlpha:false,antialias:false}) as WebGLRenderingContext|null;if(!gl)return;const vs=compile(gl.VERTEX_SHADER,vertex),fs=compile(gl.FRAGMENT_SHADER,fragment);if(!vs||!fs)return;program=gl.createProgram();if(!program)return;gl.attachShader(program,vs);gl.attachShader(program,fs);gl.linkProgram(program);gl.deleteShader(vs);gl.deleteShader(fs);if(!gl.getProgramParameter(program,gl.LINK_STATUS)){gl.deleteProgram(program);program=null;return;}buffer=gl.createBuffer();if(!buffer)return;gl.bindBuffer(gl.ARRAY_BUFFER,buffer);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);positionLocation=gl.getAttribLocation(program,'a_position');for(const name of ['u_resolution','u_a','u_b','u_c','u_d','u_time','u_audio','u_frequency','u_speed','u_contrast','u_cell','u_gamma','u_bias','u_dotDensity'])uniforms[name]=gl.getUniformLocation(program,name);smoothAudio=0;},
-  render(audio,params,time){if(!gl||!program||!buffer)return;const source=params.frequencyRange==='low'?audio.bass:params.frequencyRange==='mid'?audio.mid:params.frequencyRange==='high'?audio.treble:audio.energy;const target=Math.max(0,Math.min(1,source*(params.audioIntensity??.56)));smoothAudio+=(target-smoothAudio)*.11;const hue=Number(params.hue??210),bias=Number(params.chromaticPaletteBias??-.12);const a=hsl(hue+8,.86,.60),b=hsl(hue+72,.84,.60),c=hsl(hue+154,.82,.59),d=hsl(hue+238,.80,.62);gl.useProgram(program);gl.bindBuffer(gl.ARRAY_BUFFER,buffer);gl.enableVertexAttribArray(positionLocation);gl.vertexAttribPointer(positionLocation,2,gl.FLOAT,false,0,0);u1('u_time',time/1000);u1('u_audio',Math.pow(smoothAudio,.6)*Number(params.chromaticAudioWave??.72));u1('u_frequency',Number(params.chromaticFrequency??1));u1('u_speed',Number(params.chromaticSpeed??params.speed??.8));u1('u_contrast',Number(params.chromaticContrast??1.12));u1('u_cell',Number(params.chromaticCellSize??22));u1('u_gamma',Number(params.chromaticGamma??3));u1('u_bias',bias);u1('u_dotDensity',Number(params.chromaticDotDensity??.82));if(uniforms.u_resolution)gl.uniform2f(uniforms.u_resolution,gl.canvas.width,gl.canvas.height);u3('u_a',a);u3('u_b',b);u3('u_c',c);u3('u_d',d);gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);gl.drawArrays(gl.TRIANGLE_STRIP,0,4);},
+  init(canvas){
+    gl=canvas.getContext('webgl',{alpha:true,premultipliedAlpha:false,antialias:false}) as WebGLRenderingContext|null;
+    if(!gl)return;
+    // Sprint M1: non-blocking compile+link; program, buffer and uniforms finalize in render() once ready.
+    build=startProgramBuild(gl,vertex,fragment);
+    smoothAudio=0;
+  },
+  render(audio,params,time){if(build)finalizeBuild();if(!gl||!program||!buffer)return;const source=params.frequencyRange==='low'?audio.bass:params.frequencyRange==='mid'?audio.mid:params.frequencyRange==='high'?audio.treble:audio.energy;const target=Math.max(0,Math.min(1,source*(params.audioIntensity??.56)));smoothAudio+=(target-smoothAudio)*.11;const hue=Number(params.hue??210),bias=Number(params.chromaticPaletteBias??-.12);const a=hsl(hue+8,.86,.60),b=hsl(hue+72,.84,.60),c=hsl(hue+154,.82,.59),d=hsl(hue+238,.80,.62);gl.useProgram(program);gl.bindBuffer(gl.ARRAY_BUFFER,buffer);gl.enableVertexAttribArray(positionLocation);gl.vertexAttribPointer(positionLocation,2,gl.FLOAT,false,0,0);u1('u_time',time/1000);u1('u_audio',Math.pow(smoothAudio,.6)*Number(params.chromaticAudioWave??.72));u1('u_frequency',Number(params.chromaticFrequency??1));u1('u_speed',Number(params.chromaticSpeed??params.speed??.8));u1('u_contrast',Number(params.chromaticContrast??1.12));u1('u_cell',Number(params.chromaticCellSize??22));u1('u_gamma',Number(params.chromaticGamma??3));u1('u_bias',bias);u1('u_dotDensity',Number(params.chromaticDotDensity??.82));if(uniforms.u_resolution)gl.uniform2f(uniforms.u_resolution,gl.canvas.width,gl.canvas.height);u3('u_a',a);u3('u_b',b);u3('u_c',c);u3('u_d',d);gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);gl.drawArrays(gl.TRIANGLE_STRIP,0,4);},
   resize(width,height){gl?.viewport(0,0,width,height);},
-  cleanup(){if(gl&&program)gl.deleteProgram(program);if(gl&&buffer)gl.deleteBuffer(buffer);gl=null;program=null;buffer=null;positionLocation=-1;smoothAudio=0;Object.keys(uniforms).forEach(key=>{uniforms[key]=null;});},
+  cleanup(){if(gl&&build)abandonProgramBuild(gl,build);build=null;if(gl&&program)gl.deleteProgram(program);if(gl&&buffer)gl.deleteBuffer(buffer);gl=null;program=null;buffer=null;positionLocation=-1;smoothAudio=0;Object.keys(uniforms).forEach(key=>{uniforms[key]=null;});},
 };

@@ -1,3 +1,4 @@
+import { registerGpuShaderWarmups } from './session/gpuShaderWarmup';
 import type { VisualizerRuntimeBindings } from './VisualizerRuntimeBindings';
 import { createRendererViewportSetup } from './setup/createRendererViewportSetup';
 import { createRuntimeSessionInfrastructure } from './session/createRuntimeSessionInfrastructure';
@@ -650,6 +651,8 @@ export function createVisualizerRuntimeSession(bindings: VisualizerRuntimeBindin
       }
     });
     sessionRecoverySupervisor.markRunning('Visualizer runtime active.');
+    // Sprint M1: compile GPU programs behind the loader, after the first frames.
+    registerGpuShaderWarmups(bootSequence);
     // Sprint L3: every bind() is registered; run the ordered start-up steps.
     bootSequence.start();
     if (DEBUG_FLAGS.PERFORMANCE) console.log('✅ RAF STARTED: RuntimeFrameScheduler authority active');

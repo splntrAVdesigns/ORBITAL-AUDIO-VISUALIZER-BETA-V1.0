@@ -19,6 +19,12 @@ import {
  *      scheduler is presenting, before boot readiness is published.
  *
  * All frame callbacks are tracked short-lived RAFs and are cancelled on dispose.
+ *
+ * Sprint M1: after 'frame', registered GPU warmups run one per frame while the loader
+ * is still up, then 'shaders' is published. Profiling showed the only multi-second
+ * main-thread stalls were first-activation program compiles (Core Textures WebGL,
+ * Core Particles, Liquid Shaper). Paying that cost behind the loader moves it out of
+ * the first preset switch. A failing warmup is logged and skipped, never blocking.
  */
 export interface SessionBootStep {
   name: string;
@@ -30,6 +36,7 @@ const MAX_VIEWPORT_CONFIRM_FRAMES = 30;
 
 export class SessionBootSequence {
   private readonly steps: SessionBootStep[] = [];
+  private readonly warmups: Array<{ name: string; run: () => void }> = [];
   private raf: number | null = null;
   private started = false;
   private disposed = false;
@@ -46,6 +53,11 @@ export class SessionBootSequence {
       return;
     }
     this.steps.push({ name, order, run });
+  }
+
+  /** Register a one-shot GPU warmup that runs behind the loader after first frames. */
+  addWarmup(name: string, run: () => void): void {
+    this.warmups.push({ name, run });
   }
 
   /** Called once at the end of session setup. */
@@ -88,15 +100,39 @@ export class SessionBootSequence {
       // Two presented frames after the steps, with a committed viewport.
       if (frame >= 1 && viewportReady) {
         markBootStage('frame');
+        this.runWarmups(0);
         return;
       }
       if (frame >= MAX_VIEWPORT_CONFIRM_FRAMES) {
         // Stage never measured (e.g. hidden tab): release boot rather than stall.
         markBootStage('viewport');
         markBootStage('frame');
+        this.runWarmups(0);
         return;
       }
       this.confirmFrames(frame + 1);
+    });
+  }
+
+  private runWarmups(index: number): void {
+    if (this.disposed) return;
+    if (index >= this.warmups.length) {
+      markBootStage('shaders');
+      return;
+    }
+    // One warmup per frame so the loader keeps animating between compiles.
+    this.raf = requestTrackedShortLivedRaf('session-boot-warmup', () => {
+      this.raf = null;
+      if (this.disposed) return;
+      const warmup = this.warmups[index];
+      const startedAt = performance.now();
+      try {
+        warmup.run();
+        if (this.debug) console.log(`🔥 warmup ${warmup.name}: ${(performance.now() - startedAt).toFixed(1)}ms`);
+      } catch (error) {
+        console.warn(`[ORBITAL boot] warmup "${warmup.name}" skipped`, error);
+      }
+      this.runWarmups(index + 1);
     });
   }
 }

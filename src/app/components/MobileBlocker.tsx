@@ -3,14 +3,17 @@ import { Smartphone, Monitor, Tablet } from 'lucide-react';
 
 import { orbitalLogo, recoverBuiltInAssetImage } from '../config/assets';
 
-const SPLNTR_MICROTOOLS_URL = 'HTTP://SPLNTR-MICROTOOLS.COM';
+// Sprint M4: HTTPS, and the QR now points at ORBITAL itself so a tablet/desktop
+// can open the app directly instead of landing on the SPLNTR index page.
+const ORBITAL_APP_URL = 'https://orbital-visualizer.splntr-microtools.com';
+const ORBITAL_APP_URL_LABEL = 'orbital-visualizer.splntr-microtools.com';
 
 export function MobileBlocker() {
   const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
 
   useEffect(() => {
     // Keep the recovery destination stable across preview and production hosts.
-    const targetUrl = encodeURIComponent(SPLNTR_MICROTOOLS_URL);
+    const targetUrl = encodeURIComponent(ORBITAL_APP_URL);
     setQrCodeUrl(`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${targetUrl}`);
   }, []);
 
@@ -113,12 +116,12 @@ export function MobileBlocker() {
           color: '#94afc4',
           marginBottom: '1rem',
         }}>
-          Scan to visit SPLNTR Micro Tools
+          Scan to open ORBITAL on a tablet or desktop
         </p>
         {qrCodeUrl && (
           <img 
             src={qrCodeUrl} 
-            alt="QR Code" 
+            alt="QR code linking to the ORBITAL web app" 
             style={{
               width: '150px',
               height: '150px',
@@ -126,6 +129,9 @@ export function MobileBlocker() {
             }}
           />
         )}
+        <p style={{ fontSize: '0.75rem', color: '#7a94aa', marginTop: '0.75rem', wordBreak: 'break-all' }}>
+          {ORBITAL_APP_URL_LABEL}
+        </p>
       </div>
 
       {/* Footer Note */}

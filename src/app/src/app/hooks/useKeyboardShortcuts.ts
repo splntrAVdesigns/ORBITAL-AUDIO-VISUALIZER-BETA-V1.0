@@ -71,30 +71,8 @@ export function createKeyboardShortcutHandler({
         mediaEl.muted = !mediaEl.muted;
         if (debugUiEvents) console.log('⌨️ M pressed - Mute toggled:', mediaEl.muted);
       }
-    } else if (e.code === 'Digit1') {
-      e.preventDefault();
-      params.vizMode = 0;
-      const vizModeSelect = $('#vizMode') as HTMLSelectElement | null;
-      if (vizModeSelect) vizModeSelect.value = '0';
-      console.log('⌨️ 1 pressed - Switched to Electric Chaos');
-    } else if (e.code === 'Digit2') {
-      e.preventDefault();
-      params.vizMode = 1;
-      const vizModeSelect = $('#vizMode') as HTMLSelectElement | null;
-      if (vizModeSelect) vizModeSelect.value = '1';
-      console.log('⌨️ 2 pressed - Switched to Particle Storm');
-    } else if (e.code === 'Digit3') {
-      e.preventDefault();
-      params.vizMode = 2;
-      const vizModeSelect = $('#vizMode') as HTMLSelectElement | null;
-      if (vizModeSelect) vizModeSelect.value = '2';
-      console.log('⌨️ 3 pressed - Switched to Heatmap Bars');
-    } else if (e.code === 'Digit4') {
-      e.preventDefault();
-      params.vizMode = 3;
-      const vizModeSelect = $('#vizMode') as HTMLSelectElement | null;
-      if (vizModeSelect) vizModeSelect.value = '3';
-      console.log('⌨️ 4 pressed - Switched to Waveform Trails');
+    // Sprint M: keys 1-4 used to switch vizMode 0-3. Only mode 0 (the spike ring) still
+    // has a render path, so 2-4 silently blanked the ring. Legacy mode keys removed.
     } else if (e.code === 'KeyC') {
       e.preventDefault();
       const nextIndex = (getSelectedPaletteIndex() + 1) % palettes.length;

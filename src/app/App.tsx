@@ -193,6 +193,7 @@ import { getMotionBlurEngine, type MotionBlurConfig } from './utils/motionBlur';
 // FIX 10: CoreTextures engine imports — required for shader preset system
 import { CoreTexturesEngine } from './src/engines/CoreTexturesEngine';
 import { resolveCoreTextureParams } from './src/shaders/coreTextureParamMapper';
+import { notify } from './utils/notify';
 
 function AppContent() {
   // 🔄 Version: BUILD 20250304-PERFORMANCE-OPTIMIZED
@@ -407,8 +408,12 @@ function AppContent() {
         //    audio buffer size, reducing the pipeline delay from ~100-200ms to ~20-50ms.
         //    Without this the default hint is 'balanced' which prioritises stability over
         //    latency — fine for playback, wrong for a live audio-reactive visualiser.
+        // Sprint M2: no forced sampleRate. Pinning 44100 made 48 kHz hardware resample
+        //    every buffer and breaks createMediaStreamSource on Firefox when the mic
+        //    runs at a different rate than the context. The device-native rate is
+        //    always correct; latency is governed by latencyHint alone.
         audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)(
-          { latencyHint: 'interactive', sampleRate: 44100 }
+          { latencyHint: 'interactive' }
         );
         if (DEBUG_FLAGS.GENERAL) console.log('✅ AudioContext created on user gesture (latencyHint: interactive)');
       } else if (DEBUG_FLAGS.GENERAL) {
@@ -416,7 +421,7 @@ function AppContent() {
       }
     } catch (e) {
       console.error('❌ AudioContext creation failed:', e);
-      alert('Audio initialization failed. Please try refreshing the page.');
+      notify('Audio initialization failed. Please try refreshing the page.');
       return;
     }
     // Sprint L2: go straight to 'main' — the loader is now an overlay driven by real

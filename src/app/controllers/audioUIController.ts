@@ -13,6 +13,7 @@ import {
   subscribeActivePresetName,
 } from '../runtime/presetNameRuntimeStore';
 import { formatPresetNameForHud } from '../runtime/presetHudLabel';
+import { notify } from '../utils/notify';
 
 export interface AudioUIPlaylistItem {
   id: string;
@@ -199,7 +200,7 @@ export function createAudioUIController(options: AudioUIControllerOptions): Audi
         await AC.resume();
         await useMic();
       } catch (e: any) {
-        alert((e as Error).message);
+        notify((e as Error).message);
       }
     };
     micBtn.addEventListener('click', micClickHandler);
