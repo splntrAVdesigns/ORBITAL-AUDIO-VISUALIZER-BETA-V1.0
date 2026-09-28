@@ -334,7 +334,7 @@ export function applyRuntimeParameterTransaction(
   input: unknown,
 ): RuntimeParameterTransactionResult {
   const { patch, rejected, clamped } = sanitizeRuntimeParameterPatch(input);
-  // Sprint N: Core Particles and Core Textures are mutually exclusive.
+  // Sprint O1: Core Particles, Liquid Shaper and Core Textures are mutually exclusive.
   const layers = resolveCoreLayerPatch(patch);
   const applied = Object.keys(patch) as RuntimeParameterKey[];
   if (target) {
@@ -350,7 +350,7 @@ export function applyRuntimeParameterStoreTransaction(
   input: unknown,
 ): RuntimeParameterTransactionResult {
   const { patch, rejected, clamped } = sanitizeRuntimeParameterPatch(input);
-  // Sprint N: Core Particles and Core Textures are mutually exclusive.
+  // Sprint O1: Core Particles, Liquid Shaper and Core Textures are mutually exclusive.
   const layers = resolveCoreLayerPatch(patch);
   const applied = Object.keys(patch) as RuntimeParameterKey[];
   if (applied.length > 0) store.patch(patch);

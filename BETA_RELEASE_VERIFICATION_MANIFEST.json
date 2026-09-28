@@ -24,7 +24,7 @@
     "public/vendor/gif.js": "07aee23742523e6a154ac9c758903cd29cb7f5975c9b13f9146eaf591a01b56c",
     "public/vendor/gif.worker.js": "33ce40455c96e6a8e54845177e3dfa61c21b36941d060e35a5715f42fe7fef59",
     "index.html": "4b102a5aad57663a9b11c1bc2ad5b9c6d0be083dca21aa1800a5c5b8c09fc7aa",
-    "vercel.json": "4de7027249427cc35ff2e784611d4a0e88e39bc512da4d57336c8f0fedcf3c45",
+    "vercel.json": "df5c34faf6e01076f24db74de7a1f9d44fa8fcded3fa4c49ba84e751477faf80",
     ".gitignore": "b1e75c2b833edba757b82bb7dceda30a459ce776353724e557b4292faa2758c6",
     ".nvmrc": "8fb7215a78fb2dacb282d6fca135a48bd69892ad6560efa3c5a9c12b0200ac7c"
   }

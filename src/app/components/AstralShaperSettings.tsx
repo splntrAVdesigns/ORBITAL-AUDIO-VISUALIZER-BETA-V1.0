@@ -5,6 +5,7 @@
  * ENHANCED: Reorganized UI layout, Energy Glow as slider, improved control ranges
  */
 
+import { afterDomSectionToggle, useDomAccordionMember } from './panelAccordion';
 import React from 'react';
 import { ChevronDown } from 'lucide-react';
 
@@ -14,6 +15,7 @@ interface AstralShaperSettingsProps {
 }
 
 function AstralShaperSettings({ onReset, onResetAutoCycle }: AstralShaperSettingsProps) {
+  useDomAccordionMember('liquid');
   return (
     <div className="section" style={{ background: '#1a1d23', border: '1px solid rgba(138,43,226,0.3)' }}>
       <div className="collapsible-header" onClick={(e) => {
@@ -24,6 +26,7 @@ function AstralShaperSettings({ onReset, onResetAutoCycle }: AstralShaperSetting
           wrapper.classList.toggle('collapsed');
           chevron.classList.toggle('collapsed');
         }
+        afterDomSectionToggle('liquid', e.currentTarget);
       }}>
         <h3 style={{ color: '#BA55D3' }}>LIQUID SHAPER</h3>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

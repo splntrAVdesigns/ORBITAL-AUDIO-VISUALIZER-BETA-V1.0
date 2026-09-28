@@ -1,3 +1,4 @@
+import { announceSectionOpened, useAccordionMember } from './panelAccordion';
 import { memo, useCallback, type Dispatch, type SetStateAction } from 'react';
 import type { PlaylistTrack } from '../types/playlist';
 import { ChevronDown, Settings, SkipBack, SkipForward } from 'lucide-react';
@@ -131,22 +132,26 @@ export const ControlPanel = memo(function ControlPanel(props: ControlPanelProps)
 
   const audioTab = useControlPanelAudioTab();
   const setAudioTab = setControlPanelAudioTab;
-  const toggleColorSection = useCallback(
-    () => setColorSectionCollapsed(!colorSectionCollapsed),
-    [colorSectionCollapsed, setColorSectionCollapsed],
-  );
-  const toggleAnimationSection = useCallback(
-    () => setAnimationSectionCollapsed(!animationSectionCollapsed),
-    [animationSectionCollapsed, setAnimationSectionCollapsed],
-  );
-  const toggleSpikeSection = useCallback(
-    () => setSpikeRingSectionCollapsed(!spikeRingSectionCollapsed),
-    [setSpikeRingSectionCollapsed, spikeRingSectionCollapsed],
-  );
-  const toggleOuterHaloSection = useCallback(
-    () => setOuterHaloSectionCollapsed(!outerHaloSectionCollapsed),
-    [outerHaloSectionCollapsed, setOuterHaloSectionCollapsed],
-  );
+  const toggleColorSection = useCallback(() => {
+    setColorSectionCollapsed(!colorSectionCollapsed);
+    if (colorSectionCollapsed) announceSectionOpened('color');
+  }, [colorSectionCollapsed, setColorSectionCollapsed]);
+  useAccordionMember('color', !colorSectionCollapsed, () => setColorSectionCollapsed(true));
+  const toggleAnimationSection = useCallback(() => {
+    setAnimationSectionCollapsed(!animationSectionCollapsed);
+    if (animationSectionCollapsed) announceSectionOpened('motion');
+  }, [animationSectionCollapsed, setAnimationSectionCollapsed]);
+  useAccordionMember('motion', !animationSectionCollapsed, () => setAnimationSectionCollapsed(true));
+  const toggleSpikeSection = useCallback(() => {
+    setSpikeRingSectionCollapsed(!spikeRingSectionCollapsed);
+    if (spikeRingSectionCollapsed) announceSectionOpened('spike');
+  }, [spikeRingSectionCollapsed, setSpikeRingSectionCollapsed]);
+  useAccordionMember('spike', !spikeRingSectionCollapsed, () => setSpikeRingSectionCollapsed(true));
+  const toggleOuterHaloSection = useCallback(() => {
+    setOuterHaloSectionCollapsed(!outerHaloSectionCollapsed);
+    if (outerHaloSectionCollapsed) announceSectionOpened('halo');
+  }, [outerHaloSectionCollapsed, setOuterHaloSectionCollapsed]);
+  useAccordionMember('halo', !outerHaloSectionCollapsed, () => setOuterHaloSectionCollapsed(true));
   const resetAstralShaper = useCallback(() => (window as any).resetAstralShaper?.(), []);
 
   return (
@@ -1067,16 +1072,16 @@ export const ControlPanel = memo(function ControlPanel(props: ControlPanelProps)
       </div> {/* End fixed header/audio/control workspace */}
       <div className="panel-scrollable parameter-scroll-region">
       {/* COLOR + BPM ADAPT */}
-      <div className="panel-render-island"><ColorBPMSection
+      <div className="panel-render-island" data-accordion-section="color"><ColorBPMSection
         collapsed={colorSectionCollapsed}
         onToggleCollapse={toggleColorSection}
       /></div>
       {/* ANIMATION - Collapsible Section with Gradient */}
-      <div className="panel-render-island"><AnimationSettings 
+      <div className="panel-render-island" data-accordion-section="motion"><AnimationSettings 
         collapsed={animationSectionCollapsed}
         onToggleCollapse={toggleAnimationSection}
       /></div>
-      <div className="panel-render-island"><SpikeRingSettings 
+      <div className="panel-render-island" data-accordion-section="spike"><SpikeRingSettings 
         collapsed={spikeRingSectionCollapsed}
         onToggleCollapse={toggleSpikeSection}
         spikeCount={spikeCount}
@@ -1095,16 +1100,16 @@ export const ControlPanel = memo(function ControlPanel(props: ControlPanelProps)
         <DotsSettings embedded />
       </SpikeRingSettings></div>
       {/* OUTER HALO + INNER CORE - Collapsible Section */}
-      <div className="panel-render-island"><OuterHaloSettings 
+      <div className="panel-render-island" data-accordion-section="halo"><OuterHaloSettings 
         collapsed={outerHaloSectionCollapsed}
         onToggleCollapse={toggleOuterHaloSection}
       /></div>
       {/* CORE PARTICLES - independent black collapsible module */}
-      <div className="panel-render-island"><CoreParticlesSettings /></div>
+      <div className="panel-render-island" data-accordion-section="particles"><CoreParticlesSettings /></div>
       {/* LIQUID SHAPER - WebGL Sacred Geometry Engine */}
-      <div className="panel-render-island"><AstralShaperSettings onReset={resetAstralShaper} /></div>
+      <div className="panel-render-island" data-accordion-section="liquid"><AstralShaperSettings onReset={resetAstralShaper} /></div>
       {/* CORE TEXTURES - Shader preset system */}
-      <div className="panel-render-island"><CoreTexturesSettings /></div>
+      <div className="panel-render-island" data-accordion-section="textures"><CoreTexturesSettings /></div>
       {/* CENTER IMAGE UPLOAD SECTION - Collapsible */}
       <div className="panel-render-island"><CenterGraphicSettings /></div>
       

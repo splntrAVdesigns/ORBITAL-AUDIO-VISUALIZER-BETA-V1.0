@@ -1,3 +1,4 @@
+import { announceSectionOpened, useAccordionMember } from './panelAccordion';
 import { memo, useCallback, useEffect, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { defaultParams } from '../config/defaultParams';
@@ -35,6 +36,12 @@ function resetInput(id: string, value: number | boolean): void {
 
 function CoreParticlesSettingsComponent() {
   const [collapsed, setCollapsed] = useState(true);
+  // Sprint O2: shared accordion — opening this section closes the other members.
+  const toggleCollapsed = () => {
+    setCollapsed((value) => !value);
+    if (collapsed) announceSectionOpened('particles');
+  };
+  useAccordionMember('particles', !collapsed, () => setCollapsed(true));
 
   // Sprint N: enabling Core Particles switches Core Textures off (and vice versa).
   useEffect(() => installCoreLayerExclusivity(), []);
@@ -79,13 +86,13 @@ function CoreParticlesSettingsComponent() {
         aria-expanded={!collapsed}
         onClick={(event) => {
           if ((event.target as HTMLElement).closest('button')) return;
-          setCollapsed((value) => !value);
+          toggleCollapsed();
         }}
         onKeyDown={(event) => {
           if ((event.target as HTMLElement).closest('button')) return;
           if (event.key !== 'Enter' && event.key !== ' ') return;
           event.preventDefault();
-          setCollapsed((value) => !value);
+          toggleCollapsed();
         }}
         style={{ marginBottom: '4px' }}
       >

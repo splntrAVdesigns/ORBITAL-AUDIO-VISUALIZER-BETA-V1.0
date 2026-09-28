@@ -130,9 +130,10 @@ test('Sprint K3 feature presets exist with their hero features and every preset 
       assert.equal(byName[name][key], value, `${name}.${key}`);
     }
   }
-  // Sprint N: Core Particles and Core Textures are mutually exclusive in every built-in preset.
+  // Sprint O1: Core Particles, Liquid Shaper and Core Textures are mutually exclusive in every built-in preset.
   for (const preset of presets) {
-    assert.ok(!(preset.settings.shapeOscillate && preset.settings.coreTexturesEnabled), `${preset.name} enables both core layers`);
+    const on = ['shapeOscillate', 'astralShaper', 'coreTexturesEnabled'].filter((key) => preset.settings[key] === true);
+    assert.ok(on.length <= 1, `${preset.name} enables more than one core layer: ${on.join(' + ')}`);
   }
   const palettes = presets.map(p => p.settings.palette);
   assert.equal(new Set(palettes).size, palettes.length, 'every built-in preset must use a distinct palette');

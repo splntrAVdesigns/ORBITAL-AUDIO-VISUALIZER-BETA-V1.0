@@ -2,6 +2,7 @@
  * Core Textures Settings Panel Component
  */
 
+import { afterDomSectionToggle, useDomAccordionMember } from './panelAccordion';
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { ChevronDown, Star } from 'lucide-react';
 import { SHADER_REGISTRY } from '../src/shaders/ShaderRegistry';
@@ -19,6 +20,7 @@ interface CoreTexturesSettingsProps {
 }
 
 function CoreTexturesSettingsComponent({ onReset }: CoreTexturesSettingsProps) {
+  useDomAccordionMember('textures');
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [shaders, setShaders] = useState<ShaderCard[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -271,6 +273,7 @@ function CoreTexturesSettingsComponent({ onReset }: CoreTexturesSettingsProps) {
           wrapper.classList.toggle('collapsed');
           chevron.classList.toggle('collapsed');
         }
+        afterDomSectionToggle('textures', e.currentTarget);
       }}>
         <h3 style={{ color: '#FF1493' }}>CORE TEXTURES</h3>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

@@ -35,7 +35,7 @@
         },
         {
           "key": "Permissions-Policy",
-          "value": "microphone=(self), camera=(), geolocation=(), payment=(), usb=(), serial=()"
+          "value": "microphone=(self), midi=(self), gamepad=(self), camera=(), geolocation=(), payment=(), usb=(), serial=()"
         }
       ]
     },

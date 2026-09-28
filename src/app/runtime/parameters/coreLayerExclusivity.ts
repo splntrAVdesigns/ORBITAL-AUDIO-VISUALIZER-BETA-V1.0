@@ -1,43 +1,42 @@
 /**
- * ORBITAL — Core Particles / Core Textures exclusivity (Sprint N).
+ * ORBITAL — Core layer exclusivity (Sprint N, extended to three layers in Sprint O1).
  *
- * Both layers draw inside the core region. Running them together stacked two full-area
- * GPU/Canvas layers (a known frame-time bottleneck), so only one may be enabled:
+ * Core Particles, Liquid Shaper and Core Textures all draw in the core region. Only one
+ * may be enabled at a time (Center Graphic may still run alongside Core Textures).
  *
- *  - Enabling Core Particles turns Core Textures off.
- *  - Enabling Core Textures turns Core Particles off (last toggled wins).
- *  - A single patch/preset that enables BOTH keeps Core Particles (the dominant layer,
- *    same precedence Core Particles already has over the center graphic).
+ *  - Enabling any one layer switches the other two off (last toggled wins).
+ *  - A single patch/preset that enables more than one keeps the highest-precedence
+ *    layer: Liquid Shaper > Core Particles > Core Textures. This matches what the frame
+ *    pipeline already drew when Liquid Shaper and Core Particles were both on.
  *
- * Three entry points cover every way a toggle can change:
+ * Entry points:
  *  1. resolveCoreLayerPatch()        pure; used by runtime parameter transactions
  *                                    (macros, MIDI, presets, settings import).
- *  2. installCoreLayerExclusivity()  document-level 'change' listener for the two switches
- *                                    (user clicks and programmatic control events).
+ *  2. installCoreLayerExclusivity()  document-level 'change' listener for the three switches.
  *  3. resolveCoreLayerConflict()     one-shot cleanup of already-conflicting live state.
  */
 
 export const CORE_LAYER_EXCLUSIVITY_EVENT = 'orbital:core-layer-exclusivity';
 
-interface LayerPatch {
-  shapeOscillate?: boolean;
-  coreTexturesEnabled?: boolean;
-}
+export type CoreLayerKey = 'astralShaper' | 'shapeOscillate' | 'coreTexturesEnabled';
+/** Highest precedence first. */
+export const CORE_LAYER_KEYS: readonly CoreLayerKey[] = ['astralShaper', 'shapeOscillate', 'coreTexturesEnabled'];
+const LAYER_NAMES: Record<CoreLayerKey, string> = {
+  astralShaper: 'liquid', shapeOscillate: 'particles', coreTexturesEnabled: 'textures',
+};
 
-/** Pure. Returns the patch with the counterpart forced off, plus which keys were forced. */
+type LayerPatch = Partial<Record<CoreLayerKey, boolean>>;
+
+/** Pure. Returns the patch with every non-winning layer forced off, plus which keys were forced. */
 export function resolveCoreLayerPatch<T extends object>(patch: T): { patch: T; forced: LayerPatch } {
   const p = patch as LayerPatch;
   const forced: LayerPatch = {};
-  if (p.shapeOscillate === true && p.coreTexturesEnabled !== false) {
-    // Particles enabled (alone, or together with textures in a preset): textures off.
-    if (p.coreTexturesEnabled === true || p.coreTexturesEnabled === undefined) {
-      (patch as LayerPatch).coreTexturesEnabled = false;
-      forced.coreTexturesEnabled = false;
-    }
-  } else if (p.coreTexturesEnabled === true && p.shapeOscillate !== true && p.shapeOscillate !== false) {
-    // Textures enabled on their own: particles off.
-    (patch as LayerPatch).shapeOscillate = false;
-    forced.shapeOscillate = false;
+  const winner = CORE_LAYER_KEYS.find((key) => p[key] === true);
+  if (!winner) return { patch, forced };
+  for (const key of CORE_LAYER_KEYS) {
+    if (key === winner || p[key] === false) continue;
+    p[key] = false;
+    forced[key] = false;
   }
   return { patch, forced };
 }
@@ -46,6 +45,10 @@ function live(): { params: any; engine: any } | null {
   if (typeof window === 'undefined') return null;
   const w = window as any;
   return { params: w.params ?? null, engine: w.coreTexturesEngine ?? null };
+}
+
+function announce(key: CoreLayerKey): void {
+  window.dispatchEvent(new CustomEvent(CORE_LAYER_EXCLUSIVITY_EVENT, { detail: { layer: LAYER_NAMES[key], enabled: false } }));
 }
 
 /** Applies the UI/engine side of "textures were forced off". */
@@ -57,36 +60,47 @@ export function syncCoreTexturesOff(): void {
   state.engine?.setEnabled?.(false);
   const toggle = document.getElementById('coreTexturesEnabled') as HTMLInputElement | null;
   if (toggle) toggle.checked = false;
-  window.dispatchEvent(new CustomEvent(CORE_LAYER_EXCLUSIVITY_EVENT, { detail: { layer: 'textures', enabled: false } }));
+  announce('coreTexturesEnabled');
 }
 
-/** Applies the UI/params side of "particles were forced off". */
-export function syncCoreParticlesOff(): void {
+/** Checkbox-backed layers (particles, liquid): params + switch + change event for bound UI. */
+function syncCheckboxLayerOff(key: 'shapeOscillate' | 'astralShaper'): void {
   const state = live();
   if (!state) return;
-  if (state.params) state.params.shapeOscillate = false;
-  const toggle = document.getElementById('shapeOscillate') as HTMLInputElement | null;
+  if (state.params) state.params[key] = false;
+  const toggle = document.getElementById(key) as HTMLInputElement | null;
   if (toggle && toggle.checked) {
     toggle.checked = false;
     toggle.dispatchEvent(new Event('change', { bubbles: true }));
   }
-  window.dispatchEvent(new CustomEvent(CORE_LAYER_EXCLUSIVITY_EVENT, { detail: { layer: 'particles', enabled: false } }));
+  announce(key);
 }
+
+export function syncCoreParticlesOff(): void { syncCheckboxLayerOff('shapeOscillate'); }
+export function syncLiquidShaperOff(): void { syncCheckboxLayerOff('astralShaper'); }
+
+const SYNC_OFF: Record<CoreLayerKey, () => void> = {
+  astralShaper: syncLiquidShaperOff,
+  shapeOscillate: syncCoreParticlesOff,
+  coreTexturesEnabled: syncCoreTexturesOff,
+};
 
 export function syncForcedLayers(forced: LayerPatch): void {
-  if (forced.coreTexturesEnabled === false) syncCoreTexturesOff();
-  if (forced.shapeOscillate === false) syncCoreParticlesOff();
+  for (const key of CORE_LAYER_KEYS) if (forced[key] === false) SYNC_OFF[key]();
 }
 
-/** If live state already has both layers on (restore, unmanaged write), particles win. */
+/** If live state already has more than one layer on (restore, unmanaged write), precedence wins. */
 export function resolveCoreLayerConflict(): boolean {
   const state = live();
   if (!state?.params) return false;
-  if (state.params.shapeOscillate && state.params.coreTexturesEnabled) {
-    syncCoreTexturesOff();
-    return true;
-  }
-  return false;
+  const on = CORE_LAYER_KEYS.filter((key) => Boolean(state.params[key]));
+  if (on.length < 2) return false;
+  on.slice(1).forEach((key) => SYNC_OFF[key]());
+  return true;
+}
+
+function isLayerKey(id: string): id is CoreLayerKey {
+  return (CORE_LAYER_KEYS as readonly string[]).includes(id);
 }
 
 let installCount = 0;
@@ -100,8 +114,8 @@ export function installCoreLayerExclusivity(): () => void {
     const onChange = (event: Event) => {
       const target = event.target as HTMLInputElement | null;
       if (!target || target.type !== 'checkbox' || !target.checked) return;
-      if (target.id === 'shapeOscillate') syncCoreTexturesOff();
-      else if (target.id === 'coreTexturesEnabled') syncCoreParticlesOff();
+      if (!isLayerKey(target.id)) return;
+      for (const key of CORE_LAYER_KEYS) if (key !== target.id) SYNC_OFF[key]();
     };
     document.addEventListener('change', onChange, true);
     removeListener = () => document.removeEventListener('change', onChange, true);

@@ -1,10 +1,32 @@
-/** ORBITAL MIDI manager — Sprint 22K.1 */
-export type MidiAssignmentMap = Record<string, number>;
+import { cancelTrackedTimeout, scheduleTrackedTimeout } from '../runtime/mainThread/MainThreadAsyncDiagnostics';
+import { safeLocalStorage } from '../utils/browserCompat';
+import { applyRuntimeParameterTransaction } from '../runtime/parameters/RuntimeParameterTransactions';
+
+/**
+ * ORBITAL — MIDI controller (Sprint O3).
+ *
+ * Changes from v3:
+ *  - Macros start UNASSIGNED (Learn is the norm in VJ tools). The old CC 1–8 defaults
+ *    collided with mod wheel (CC1), breath (CC2) and channel volume (CC7).
+ *  - Bindings are device + channel aware: { cc, channel, inputId }. Two controllers
+ *    sending the same CC no longer collide.
+ *  - Learn needs a deliberate move (the same control must travel >= LEARN_MIN_TRAVEL),
+ *    so a noisy continuous controller on "All inputs" can't steal the binding.
+ *  - Soft takeover (pickup): after a preset/UI change, a knob only takes control once
+ *    it reaches or crosses the macro's current value. No jumps.
+ *  - Removed hidden Note actions (36–39 viz mode — dead since Sprint M; 40–43 palette
+ *    cycle — fired whenever those keys were played).
+ *  - Mappings export/import with settings (exportMidiConfig / importMidiConfig).
+ */
+
+export interface MidiBinding { cc: number; channel: number; inputId?: string; inputName?: string }
+export type MidiAssignmentMap = Record<string, MidiBinding>;
 export type MidiCapability = 'checking'|'unsupported'|'blocked'|'denied'|'disconnected'|'connected'|'no-devices';
 export type MidiStatus = {
   enabled:boolean; capability:MidiCapability; inputs:{id:string;name:string;manufacturer?:string;state?:string;connection?:string}[];
   selectedInputId:string; channel:number; learningMacro:string|null; assignments:MidiAssignmentMap; lastCC:number|null;
-  lastValue:number|null; learnExpiresAt:number|null; error?:string; guidance?:string;
+  lastValue:number|null; lastChannel?:number|null; learnExpiresAt:number|null; softTakeover?:boolean;
+  waitingForPickup?:string[]; error?:string; guidance?:string;
 };
 export interface MidiControllerOptions {
   params: Record<string, any>;
@@ -14,12 +36,70 @@ export interface MidiControllerOptions {
   setSelectedPaletteIndex: (v: number) => void;
   palettesLength: number;
 }
-const STORAGE='orbital-midi-config-v3';
-const LEARN_TIMEOUT_MS=15000;
-const DEFAULT_ASSIGNMENTS: MidiAssignmentMap = Object.fromEntries(Array.from({length:8},(_,i)=>[`macro${i+1}`,i+1]));
+
+export const MIDI_CONFIG_IMPORTED_EVENT = 'orbital:midi-config-imported';
+const STORAGE = 'orbital-midi-config-v4';
+const LEGACY_STORAGE = 'orbital-midi-config-v3';
+const LEARN_TIMEOUT_MS = 15000;
+/** Minimum CC travel (0–127) before Learn accepts a control. */
+const LEARN_MIN_TRAVEL = 6;
+/** Pickup window in macro units (0–100). */
+const PICKUP_WINDOW = 3;
+const MACRO_IDS = Array.from({ length: 8 }, (_, i) => `macro${i + 1}`);
 
 function inferBlockedMessage(message:string){ return /permissions policy|disabled in this document|not allowed by permissions/i.test(message); }
 function inferDeniedMessage(message:string){ return /permission|denied|notallowederror/i.test(message); }
+const clampInt = (v: unknown, lo: number, hi: number) => (typeof v === 'number' && Number.isInteger(v) && v >= lo && v <= hi ? v : null);
+
+function sanitizeBinding(raw: unknown): MidiBinding | null {
+  if (typeof raw === 'number') { const cc = clampInt(raw, 0, 119); return cc === null ? null : { cc, channel: 0 }; }
+  if (!raw || typeof raw !== 'object') return null;
+  const r = raw as Record<string, unknown>;
+  const cc = clampInt(r.cc, 0, 119);
+  const channel = clampInt(r.channel, 0, 16);
+  if (cc === null || channel === null) return null;
+  const binding: MidiBinding = { cc, channel };
+  if (typeof r.inputId === 'string' && r.inputId.length <= 256) binding.inputId = r.inputId;
+  if (typeof r.inputName === 'string' && r.inputName.length <= 128) binding.inputName = r.inputName;
+  return binding;
+}
+
+export function sanitizeAssignments(raw: unknown): MidiAssignmentMap {
+  const out: MidiAssignmentMap = {};
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return out;
+  for (const id of MACRO_IDS) { const b = sanitizeBinding((raw as Record<string, unknown>)[id]); if (b) out[id] = b; }
+  return out;
+}
+
+/** v3 stored the untouched factory map { macroN: N }. Treat that as "never learned". */
+function isLegacyFactoryMap(raw: unknown): boolean {
+  if (!raw || typeof raw !== 'object') return false;
+  const entries = Object.entries(raw as Record<string, unknown>);
+  return entries.length === 8 && entries.every(([k, v]) => /^macro[1-8]$/.test(k) && v === Number(k.slice(5)));
+}
+
+export interface MidiConfigPayload { version: 4; selectedInputId: string; channel: number; softTakeover: boolean; assignments: MidiAssignmentMap }
+
+/** Read the saved MIDI config for settings export. */
+export function exportMidiConfig(): MidiConfigPayload | null {
+  try { const s = JSON.parse(safeLocalStorage.getItem(STORAGE) || 'null'); return s && s.version === 4 ? s : null; } catch { return null; }
+}
+
+/** Validate and store an imported MIDI config, then tell the live controller to reload. */
+export function importMidiConfig(raw: unknown): boolean {
+  if (!raw || typeof raw !== 'object') return false;
+  const r = raw as Record<string, unknown>;
+  const payload: MidiConfigPayload = {
+    version: 4,
+    selectedInputId: typeof r.selectedInputId === 'string' && r.selectedInputId.length <= 256 ? r.selectedInputId : 'all',
+    channel: clampInt(r.channel, 0, 16) ?? 0,
+    softTakeover: r.softTakeover !== false,
+    assignments: sanitizeAssignments(r.assignments),
+  };
+  safeLocalStorage.setItem(STORAGE, JSON.stringify(payload));
+  window.dispatchEvent(new Event(MIDI_CONFIG_IMPORTED_EVENT));
+  return true;
+}
 
 export class MidiController {
   private midiAccess:any=null;
@@ -27,13 +107,20 @@ export class MidiController {
   private capability:MidiCapability='checking';
   private selectedInputId='all';
   private channel=0;
+  private softTakeover=true;
   private learningMacro:string|null=null;
-  private assignments:MidiAssignmentMap={...DEFAULT_ASSIGNMENTS};
+  private learnCandidates=new Map<string,number>();
+  private assignments:MidiAssignmentMap={};
   private cleanupFns:(()=>void)[]=[];
   private learnTimer:number|null=null;
   private learnExpiresAt:number|null=null;
   private lastCC:number|null=null;
   private lastValue:number|null=null;
+  private lastChannel:number|null=null;
+  /** Soft takeover: the macro value MIDI last wrote, and the last raw position seen. */
+  private lastWritten=new Map<string,number>();
+  private lastIncoming=new Map<string,number>();
+  private pickedUp=new Set<string>();
   private error?:string;
   private guidance?:string;
   private macroCommitTimer: ReturnType<typeof setTimeout> | null = null;
@@ -44,21 +131,20 @@ export class MidiController {
     this.detectCapability();
     const onToggle=(e:Event)=>this.setEnabled(Boolean((e as CustomEvent).detail?.enabled));
     const onLearn=(e:Event)=>this.toggleLearn((e as CustomEvent).detail?.macroId ?? null);
-    const onSelect=(e:Event)=>{ const d=(e as CustomEvent).detail||{}; if(typeof d.inputId==='string')this.selectedInputId=d.inputId; if(Number.isFinite(d.channel))this.channel=d.channel; this.save(); this.bindInputs(); this.emit(); };
-    const onClear=(e:Event)=>{ const id=(e as CustomEvent).detail?.macroId; if(id) delete this.assignments[id]; if(this.learningMacro===id)this.cancelLearn(); this.save(); this.emit(); };
+    const onSelect=(e:Event)=>{ const d=(e as CustomEvent).detail||{};
+      if(typeof d.inputId==='string')this.selectedInputId=d.inputId;
+      if(Number.isFinite(d.channel))this.channel=d.channel;
+      if(typeof d.softTakeover==='boolean'){ this.softTakeover=d.softTakeover; this.pickedUp.clear(); }
+      this.save(); this.bindInputs(); this.emit(); };
+    const onClear=(e:Event)=>{ const id=(e as CustomEvent).detail?.macroId; if(id){ delete this.assignments[id]; this.pickedUp.delete(id); } if(this.learningMacro===id)this.cancelLearn(); this.save(); this.emit(); };
     const onCancel=()=>this.cancelLearn();
-    window.addEventListener('orbital:midi-toggle',onToggle as EventListener);
-    window.addEventListener('orbital:midi-learn',onLearn as EventListener);
-    window.addEventListener('orbital:midi-select',onSelect as EventListener);
-    window.addEventListener('orbital:midi-clear',onClear as EventListener);
-    window.addEventListener('orbital:midi-cancel-learn',onCancel as EventListener);
-    this.cleanupFns.push(
-      ()=>window.removeEventListener('orbital:midi-toggle',onToggle as EventListener),
-      ()=>window.removeEventListener('orbital:midi-learn',onLearn as EventListener),
-      ()=>window.removeEventListener('orbital:midi-select',onSelect as EventListener),
-      ()=>window.removeEventListener('orbital:midi-clear',onClear as EventListener),
-      ()=>window.removeEventListener('orbital:midi-cancel-learn',onCancel as EventListener),
-    );
+    const onImported=()=>{ this.load(); this.pickedUp.clear(); this.bindInputs(); this.emit(); };
+    const pairs:[string,EventListener][]=[
+      ['orbital:midi-toggle',onToggle as EventListener],['orbital:midi-learn',onLearn as EventListener],
+      ['orbital:midi-select',onSelect as EventListener],['orbital:midi-clear',onClear as EventListener],
+      ['orbital:midi-cancel-learn',onCancel as EventListener],[MIDI_CONFIG_IMPORTED_EVENT,onImported as EventListener],
+    ];
+    for(const [name,fn] of pairs){ window.addEventListener(name,fn); this.cleanupFns.push(()=>window.removeEventListener(name,fn)); }
     this.emit();
   }
   dispose():void {
@@ -86,7 +172,7 @@ export class MidiController {
     if(!(navigator as any).requestMIDIAccess){
       this.capability='unsupported';
       this.error='Web MIDI is not supported in this browser.';
-      this.guidance='Open the deployed ORBITAL app in a current Chromium browser such as Chrome or Edge.';
+      this.guidance='Use Chrome, Edge or Firefox on desktop. Safari does not support Web MIDI.';
       return;
     }
     this.capability='disconnected';
@@ -96,7 +182,7 @@ export class MidiController {
         if(policy?.allowsFeature && !policy.allowsFeature('midi')){
           this.capability='blocked';
           this.error='MIDI is blocked by this preview document permissions policy.';
-          this.guidance='Figma preview does not grant Web MIDI access. Test MIDI from the deployed Vercel site in Chrome or Edge.';
+          this.guidance='Embedded previews do not grant Web MIDI access. Open orbital-visualizer.splntr-microtools.com in Chrome, Edge or Firefox.';
         }
       }catch{}
     }
@@ -117,7 +203,7 @@ export class MidiController {
       if(inferBlockedMessage(msg)){
         this.capability='blocked';
         this.error='MIDI is blocked by this preview document permissions policy.';
-        this.guidance='Figma preview cannot request MIDI. Open the deployed Vercel build in Chrome or Edge.';
+        this.guidance='Embedded previews cannot request MIDI. Open the deployed site in Chrome, Edge or Firefox.';
       }else if(inferDeniedMessage(msg)){
         this.capability='denied'; this.error='MIDI permission was denied.'; this.guidance='Allow MIDI access in the browser site permissions, then reconnect.';
       }else{
@@ -143,13 +229,14 @@ export class MidiController {
     if(this.learningMacro===macroId){ this.cancelLearn(); return; }
     this.cancelLearn(false);
     this.learningMacro=macroId;
+    this.learnCandidates.clear();
     this.learnExpiresAt=Date.now()+LEARN_TIMEOUT_MS;
     this.learnTimer=window.setTimeout(()=>this.cancelLearn(),LEARN_TIMEOUT_MS);
     this.emit();
   }
   private cancelLearn(emit=true){
     if(this.learnTimer!==null)window.clearTimeout(this.learnTimer);
-    this.learnTimer=null; this.learningMacro=null; this.learnExpiresAt=null;
+    this.learnTimer=null; this.learningMacro=null; this.learnExpiresAt=null; this.learnCandidates.clear();
     if(emit)this.emit();
   }
 
@@ -161,38 +248,86 @@ export class MidiController {
   }
   private unbindInputs(){ if(this.midiAccess){ this.midiAccess.inputs.forEach((input:any)=>input.onmidimessage=null); this.midiAccess.onstatechange=null; } }
 
+  private bindingMatches(b:MidiBinding,cc:number,channel:number,inputId:string){
+    return b.cc===cc && (b.channel===0||b.channel===channel) && (!b.inputId||b.inputId===inputId);
+  }
+
+  /** Soft takeover gate. Returns true when this incoming value may drive the macro. */
+  private passesPickup(macroId:string,value:number):boolean{
+    if(!this.softTakeover){ this.lastIncoming.set(macroId,value); return true; }
+    const current=Number(this.opts.params[macroId]);
+    const written=this.lastWritten.get(macroId);
+    // Something other than MIDI moved the macro (preset, UI, randomize): re-arm pickup.
+    if(written===undefined || !Number.isFinite(current) || Math.abs(current-written)>0.5) this.pickedUp.delete(macroId);
+    if(this.pickedUp.has(macroId)){ this.lastIncoming.set(macroId,value); return true; }
+    const previous=this.lastIncoming.get(macroId);
+    this.lastIncoming.set(macroId,value);
+    const target=Number.isFinite(current)?current:0;
+    const crossed=previous!==undefined && (previous-target)*(value-target)<=0;
+    if(Math.abs(value-target)<=PICKUP_WINDOW || crossed){ this.pickedUp.add(macroId); return true; }
+    return false;
+  }
+
   private handleMessage=(message:any)=>{
     const [status,data1,data2]=message.data as [number,number,number];
     const command=status & 0xf0; const channel=(status & 0x0f)+1;
     if(this.channel!==0 && channel!==this.channel)return;
-    if(command===0xb0){
-      this.lastCC=data1; this.lastValue=data2;
-      if(this.learningMacro){
-        for(const key of Object.keys(this.assignments)) if(this.assignments[key]===data1) delete this.assignments[key];
-        this.assignments[this.learningMacro]=data1; this.save(); this.cancelLearn(false);
-      }
-      const macroId=Object.keys(this.assignments).find(k=>this.assignments[k]===data1);
-      if(macroId){
-        const value=(data2/127)*100; applyRuntimeParameterTransaction(this.opts.params,{[macroId]:value});
-        this.opts.applyMacroLive(macroId,value);
-        this.scheduleMacroCommit(macroId,value);
-      }
-      this.emit();
+    if(command!==0xb0 || data1>119) return; // CC only; 120–127 are channel-mode messages.
+    const input=message.currentTarget||message.target||{};
+    const inputId=String(input.id||'');
+    this.lastCC=data1; this.lastValue=data2; this.lastChannel=channel;
+
+    if(this.learningMacro){
+      const key=`${inputId}|${channel}|${data1}`;
+      const first=this.learnCandidates.get(key);
+      if(first===undefined){ this.learnCandidates.set(key,data2); this.emit(); return; }
+      if(Math.abs(data2-first)<LEARN_MIN_TRAVEL){ this.emit(); return; }
+      const binding:MidiBinding={cc:data1,channel,inputId:inputId||undefined,inputName:input.name||undefined};
+      for(const id of Object.keys(this.assignments)) if(this.bindingMatches(this.assignments[id],data1,channel,inputId)) delete this.assignments[id];
+      this.assignments[this.learningMacro]=binding;
+      this.pickedUp.add(this.learningMacro); // the user is holding this control right now
+      this.save(); this.cancelLearn(false);
     }
-    if(command===0x90 && data2>0){
-      if(data1>=36&&data1<=39){ const mode=data1-36; applyRuntimeParameterTransaction(this.opts.params,{vizMode:mode}); const el=document.querySelector('#vizMode') as HTMLSelectElement|null; if(el){el.value=String(mode);el.dispatchEvent(new Event('change',{bubbles:true}));} }
-      if(data1>=40&&data1<=43) this.opts.setSelectedPaletteIndex((this.opts.getSelectedPaletteIndex()+1)%this.opts.palettesLength);
+
+    const value=(data2/127)*100;
+    for(const macroId of Object.keys(this.assignments)){
+      if(!this.bindingMatches(this.assignments[macroId],data1,channel,inputId)) continue;
+      if(!this.passesPickup(macroId,value)) continue;
+      applyRuntimeParameterTransaction(this.opts.params,{[macroId]:value});
+      this.lastWritten.set(macroId,value);
+      this.opts.applyMacroLive(macroId,value);
+      this.scheduleMacroCommit(macroId,value);
     }
+    this.emit();
   };
 
   private snapshot():MidiStatus{
     const inputs=this.midiAccess?Array.from(this.midiAccess.inputs.values()).filter((i:any)=>i.state!=='disconnected').map((i:any)=>({id:i.id,name:i.name||'MIDI Input',manufacturer:i.manufacturer||'',state:i.state,connection:i.connection})):[];
-    return {enabled:this.enabled,capability:this.capability,inputs,selectedInputId:this.selectedInputId,channel:this.channel,learningMacro:this.learningMacro,assignments:{...this.assignments},lastCC:this.lastCC,lastValue:this.lastValue,learnExpiresAt:this.learnExpiresAt,error:this.error,guidance:this.guidance};
+    const waitingForPickup=this.softTakeover?Object.keys(this.assignments).filter(id=>this.lastIncoming.has(id)&&!this.pickedUp.has(id)):[];
+    return {enabled:this.enabled,capability:this.capability,inputs,selectedInputId:this.selectedInputId,channel:this.channel,learningMacro:this.learningMacro,assignments:{...this.assignments},lastCC:this.lastCC,lastValue:this.lastValue,lastChannel:this.lastChannel,learnExpiresAt:this.learnExpiresAt,softTakeover:this.softTakeover,waitingForPickup,error:this.error,guidance:this.guidance};
   }
   private emit(){ window.dispatchEvent(new CustomEvent('orbital:midi-status',{detail:this.snapshot()})); }
-  private save(){ safeLocalStorage.setItem(STORAGE,JSON.stringify({selectedInputId:this.selectedInputId,channel:this.channel,assignments:this.assignments})); }
-  private load(){ try{const s=JSON.parse(safeLocalStorage.getItem(STORAGE)||'{}'); if(s.selectedInputId)this.selectedInputId=s.selectedInputId; if(Number.isFinite(s.channel))this.channel=s.channel; if(s.assignments)this.assignments={...DEFAULT_ASSIGNMENTS,...s.assignments};}catch{} }
+  private save(){
+    const payload:MidiConfigPayload={version:4,selectedInputId:this.selectedInputId,channel:this.channel,softTakeover:this.softTakeover,assignments:this.assignments};
+    safeLocalStorage.setItem(STORAGE,JSON.stringify(payload));
+  }
+  private load(){
+    try{
+      let s=JSON.parse(safeLocalStorage.getItem(STORAGE)||'null');
+      if(!s){
+        // One-time v3 migration. An untouched factory map (CC 1–8) becomes unassigned.
+        const legacy=JSON.parse(safeLocalStorage.getItem(LEGACY_STORAGE)||'null');
+        if(legacy){
+          s={version:4,selectedInputId:legacy.selectedInputId,channel:legacy.channel,softTakeover:true,
+            assignments:isLegacyFactoryMap(legacy.assignments)?{}:legacy.assignments};
+        }
+      }
+      if(!s) return;
+      if(typeof s.selectedInputId==='string') this.selectedInputId=s.selectedInputId;
+      if(Number.isFinite(s.channel)) this.channel=s.channel;
+      this.softTakeover=s.softTakeover!==false;
+      this.assignments=sanitizeAssignments(s.assignments);
+      this.save();
+    }catch{}
+  }
 }
-import { cancelTrackedTimeout, scheduleTrackedTimeout } from '../runtime/mainThread/MainThreadAsyncDiagnostics';
-import { safeLocalStorage } from '../utils/browserCompat';
-import { applyRuntimeParameterTransaction } from '../runtime/parameters/RuntimeParameterTransactions';
