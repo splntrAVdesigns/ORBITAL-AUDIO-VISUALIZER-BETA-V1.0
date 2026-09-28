@@ -85,6 +85,7 @@
   },
   "dependencies": {
     "@radix-ui/react-dialog": "1.1.6",
+    "@vercel/speed-insights": "^2.0.0",
     "clsx": "2.1.1",
     "lucide-react": "0.487.0",
     "motion": "12.23.24",

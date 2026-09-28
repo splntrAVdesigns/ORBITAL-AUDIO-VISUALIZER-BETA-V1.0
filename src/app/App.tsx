@@ -95,6 +95,7 @@ import { ControlPanel } from './components/ControlPanel';
 import { LandingPage } from './components/LandingPage';
 import { IntroTutorial } from './components/IntroTutorial';
 import { SettingsPanel } from './components/SettingsPanel';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 
 // Utility imports
 import { checkBrowserCompatibility, safeLocalStorage } from './utils/browserCompat';
@@ -1056,6 +1057,7 @@ function AppContent() {
             box-shadow: 0 0 12px rgba(30,144,255,0.6) !important;
           }
         `}} />
+        <SpeedInsights />
       </>
     );
 }
