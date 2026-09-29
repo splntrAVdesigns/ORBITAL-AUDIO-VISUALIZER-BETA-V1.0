@@ -10,10 +10,13 @@ const textures = read('src/app/components/CoreTexturesSettings.tsx');
 const center = read('src/app/components/CenterGraphicSettings.tsx');
 const ui = read('src/app/runtime/visualizer/ui/ProductionUISideEffectRuntime.ts');
 const presets = read('src/app/utils/presetActions.ts');
+const knobPaint = read('src/app/components/macroKnobPaint.ts');
 const checks = [
-  ['macro fill direction repaired', macro.includes('String(rounded - 100)') && macro.includes('strokeDashoffset={value - 100}')],
-  ['deferred macro sync direction repaired', ui.includes('String(val - 100)') && ui.includes('String(value - 100)')],
-  ['preset/reset macro sync direction repaired', presets.includes('String(macroValue - 100)') && presets.includes("strokeDashoffset = '-100'")],
+  // Sprint O3.2: every knob writer paints through macroKnobPaint.ts, the single owner of the
+  // fill direction (value - 100). These checks pin both the direction and the routing.
+  ['macro fill direction repaired', knobPaint.includes('String(value - 100)') && macro.includes('strokeDashoffset={value - 100}') && macro.includes('paintMacroKnob(id, rounded')],
+  ['deferred macro sync direction repaired', ui.includes('paintMacroKnob(macro, val)') && ui.includes('paintMacroKnob(macro, value)') && !ui.includes('100 - val')],
+  ['preset/reset macro sync direction repaired', presets.includes('paintMacroKnob(macroName, macroValue)') && presets.includes('paintMacroKnob(macroName, 0)') && !presets.includes('100 - macroValue')],
   ['macro preview remains zero RAF', !macro.includes('requestAnimationFrame') && !macro.includes("setAttribute('d'")],
   ['audio region isolated', panel.includes('audio-live-region') && css.includes('.audio-live-region {')],
   ['audio remains collapsible', panel.includes('setAudioSectionCollapsed(!audioSectionCollapsed)') && panel.includes('collapsible-wrapper ${audioSectionCollapsed')],

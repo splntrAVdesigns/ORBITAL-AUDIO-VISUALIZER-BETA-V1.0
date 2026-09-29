@@ -6,6 +6,7 @@
 // in explicitly.
 
 import { palettes } from '../../data/colorPalettes';
+import { paintMacroKnob } from '../../components/macroKnobPaint';
 import { defaultParams } from '../../config/defaultParams';
 import { normalizeDotDensityForSlider } from '../../config/parameterConversions';
 import { DEBUG_FLAGS } from '../../src/app/config/debugFlags';
@@ -110,16 +111,7 @@ export function createSectionResets({ ctx, params, applyMacro, paletteLabel }: S
       ctx.setMacroValues((prev: any) => ({ ...prev, macro2: 0 }));
       const macro2Hidden = document.getElementById('macro2-hidden') as HTMLInputElement | null;
       if (macro2Hidden) macro2Hidden.value = '0';
-      const macro2Fill = document.querySelector<SVGPathElement>('#macro2-fill');
-      if (macro2Fill) {
-        macro2Fill.style.opacity = '0';
-        macro2Fill.style.strokeDashoffset = '-100';
-        macro2Fill.style.setProperty('--knob-angle', '0deg');
-        macro2Fill.style.setProperty('--fill-percent', '0%');
-      }
-      const macro2Value = document.getElementById('macro2-value');
-      if (macro2Value) macro2Value.textContent = '0';
-      macro2Fill?.closest('.macro-knob-circle')?.classList.remove('active');
+      paintMacroKnob('macro2', 0);
     }
     
     // 🗑️ (Beta cleanup): resetAdvancedMotionFX removed — confirmed legacy. It only reset

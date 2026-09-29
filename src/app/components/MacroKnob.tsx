@@ -1,4 +1,6 @@
 import { useEffect, useRef } from 'react';
+import { MACRO_LIVE_PREVIEW_EVENT } from '../engine/MidiController';
+import { paintMacroKnob } from './macroKnobPaint';
 
 interface MacroKnobProps {
   id: string;
@@ -39,15 +41,23 @@ export function MacroKnob({
   // owns the complete drag gesture until the single release commit.
   useEffect(() => {
     if (!draggingRef.current) latestValueRef.current = value;
-    const fillPath = fillPathRef.current;
-    if (fillPath && !draggingRef.current) {
-      fillPath.style.strokeDashoffset = String(value - 100);
-      fillPath.style.opacity = value > 0 ? '1' : '0';
-    }
-    if (valueLabelRef.current && !draggingRef.current) {
-      valueLabelRef.current.textContent = String(Math.round(value));
-    }
-  }, [value]);
+    if (!draggingRef.current) paintMacroKnob(id, value);
+  }, [id, value]);
+
+  // Sprint O3.1: external controllers (MIDI) paint the gutter on every message. Paint only —
+  // the React value still arrives through the debounced commit, so no per-message re-render.
+  useEffect(() => {
+    const onPreview = (event: Event) => {
+      const detail = (event as CustomEvent<{ macroId?: string; value?: number }>).detail;
+      if (!detail || detail.macroId !== id || draggingRef.current) return;
+      const next = Math.max(0, Math.min(100, Number(detail.value)));
+      if (!Number.isFinite(next)) return;
+      paintMacroKnob(id, next);
+      lastPaintedValueRef.current = next;
+    };
+    window.addEventListener(MACRO_LIVE_PREVIEW_EVENT, onPreview);
+    return () => window.removeEventListener(MACRO_LIVE_PREVIEW_EVENT, onPreview);
+  }, [id]);
 
   // SVG parameters
   const center = size / 2;
@@ -84,15 +94,8 @@ export function MacroKnob({
     if (!force && rounded === lastPaintedValueRef.current) return;
     lastPaintedValueRef.current = rounded;
 
-    const fillPath = fillPathRef.current;
-    if (fillPath) {
-      // Phase 4.8J.4: macro interaction is a paint-only UI preview. Keep the
-      // immutable path and cap preview painting so pointer-event bursts cannot
-      // starve the production visual frame clock.
-      fillPath.style.strokeDashoffset = String(rounded - 100);
-      fillPath.style.opacity = rounded > 0 ? '0.92' : '0';
-    }
-    if (valueLabelRef.current) valueLabelRef.current.textContent = String(rounded);
+    // Phase 4.8J.4: paint-only UI preview during drag (capped at 30 Hz by the caller).
+    paintMacroKnob(id, rounded, { opacity: 0.92, glow: false });
   };
 
   const applyLocalPreview = (rounded: number, nowMs: number) => {
@@ -109,11 +112,13 @@ export function MacroKnob({
     if (!deferRuntimeUpdates) onChange(rounded);
   };
 
+  // Release does one full paint (incl. glow) so the committed state is always consistent.
   const finishDrag = (pointerId?: number) => {
     if (!draggingRef.current) return;
     if (pointerId !== undefined && activePointerIdRef.current !== pointerId) return;
     const committed = latestValueRef.current;
-    paintLocalPreview(committed, true);
+    lastPaintedValueRef.current = committed;
+    paintMacroKnob(id, committed);
     draggingRef.current = false;
     svgContainerRef.current?.classList.remove('dragging');
     activePointerIdRef.current = null;

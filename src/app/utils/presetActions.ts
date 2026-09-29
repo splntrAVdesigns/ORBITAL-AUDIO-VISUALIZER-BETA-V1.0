@@ -13,6 +13,7 @@
 // with its returned functions destructured back into the same local names that were
 // used inline before this extraction, so every existing call site keeps working unchanged.
 
+import { paintMacroKnob } from '../components/macroKnobPaint';
 import { CORE_PARTICLE_SPREAD_SCALE_VERSION, migrateCustomPresetList } from '../config/coreParticleSpreadScale';
 import { applyShaderControlDefaults } from '../src/shaders/coreTextureControlDefaults';
 import { resolveCoreLayerConflict } from '../runtime/parameters/coreLayerExclusivity';
@@ -478,6 +479,7 @@ export function createPresetActions(ctx: PresetActionsContext) {
       };
       
       // Update each macro (all 8)
+      const syncedMacroValues: Record<string, number> = {};
       ['macro1', 'macro2', 'macro3', 'macro4', 'macro5', 'macro6', 'macro7', 'macro8'].forEach(macroName => {
         const macroValue = calculateMacroValue(macroName);
         
@@ -490,17 +492,16 @@ export function createPresetActions(ctx: PresetActionsContext) {
           el.value = String(macroValue);
         }
         
-        // Update visual feedback (knob rotation and value display)
-        const fillEl = document.querySelector<SVGPathElement>(`#${macroName}-fill`);
-        const valueEl = document.getElementById(`${macroName}-value`);
-        if (fillEl) {
-          const angle = (macroValue / 100) * 270; // 0-270 degrees (CSS conic-gradient expects this range)
-          fillEl.style.strokeDashoffset = String(macroValue - 100);
-          (fillEl as any).style.setProperty('--knob-angle', `${angle}deg`);
-        }
-        if (valueEl) {
-          valueEl.textContent = Math.round(macroValue).toString();
-        }
+        // Sprint O3.2: one painter sets arc, opacity, glow and label together.
+        paintMacroKnob(macroName, macroValue);
+        syncedMacroValues[macroName] = macroValue;
+      });
+      // Keep React's committed knob value in step, so a later drag starts from here, not 0.
+      ctx.setMacroValues((previous: Record<string, number>) => {
+        let changed = false;
+        const next = { ...previous };
+        for (const [macro, v] of Object.entries(syncedMacroValues)) if (next[macro] !== v) { next[macro] = v; changed = true; }
+        return changed ? next : previous;
       });
     }
     
@@ -1308,17 +1309,7 @@ export function createPresetActions(ctx: PresetActionsContext) {
 
         const hiddenInput = $(`#${macroName}-hidden`) as HTMLInputElement;
         if (hiddenInput) hiddenInput.value = '0';
-        const fillEl = document.querySelector<SVGPathElement>(`#${macroName}-fill`);
-        const valueEl = document.getElementById(`${macroName}-value`);
-        const circleEl = fillEl?.closest('.macro-knob-circle');
-        if (fillEl) {
-          fillEl.style.strokeDashoffset = '-100';
-          fillEl.style.setProperty('--knob-angle', '0deg');
-          fillEl.style.setProperty('--fill-percent', '0%');
-          fillEl.style.opacity = '0';
-        }
-        if (valueEl) valueEl.textContent = '0';
-        circleEl?.classList.remove('active');
+        paintMacroKnob(macroName, 0);
       }
 
       ctx.setMacroValues(macroDefaults);
@@ -1376,16 +1367,7 @@ export function createPresetActions(ctx: PresetActionsContext) {
         const hiddenInput = $(`#${macroName}-hidden`) as HTMLInputElement;
         if (hiddenInput) hiddenInput.value = '0';
         
-        // Old DOM manipulation (kept for any legacy code)
-        const fillEl = document.querySelector<SVGPathElement>(`#${macroName}-fill`);
-        const valueEl = document.getElementById(`${macroName}-value`);
-        if (fillEl) {
-          fillEl.style.strokeDashoffset = '-100';
-          fillEl.style.setProperty('--knob-angle', `0deg`);
-          fillEl.style.setProperty('--fill-percent', '0%');
-          fillEl.style.opacity = '0';
-        }
-        if (valueEl) valueEl.textContent = '0';
+        paintMacroKnob(macroName, 0);
       });
       
       // SECOND: Reset all params to defaults

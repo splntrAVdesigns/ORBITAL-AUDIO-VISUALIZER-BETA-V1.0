@@ -12,8 +12,10 @@ import { applyRuntimeParameterTransaction } from '../runtime/parameters/RuntimeP
  *    sending the same CC no longer collide.
  *  - Learn needs a deliberate move (the same control must travel >= LEARN_MIN_TRAVEL),
  *    so a noisy continuous controller on "All inputs" can't steal the binding.
- *  - Soft takeover (pickup): after a preset/UI change, a knob only takes control once
- *    it reaches or crosses the macro's current value. No jumps.
+ *  - Optional soft takeover (pickup), OFF by default. Useful for pots/faders with a
+ *    physical position; wrong for endless encoders, which have none.
+ *  - Knob gutters paint on every CC via MACRO_LIVE_PREVIEW_EVENT; status publishes are
+ *    coalesced to one per STATUS_INTERVAL_MS instead of one per message.
  *  - Removed hidden Note actions (36–39 viz mode — dead since Sprint M; 40–43 palette
  *    cycle — fired whenever those keys were played).
  *  - Mappings export/import with settings (exportMidiConfig / importMidiConfig).
@@ -38,6 +40,9 @@ export interface MidiControllerOptions {
 }
 
 export const MIDI_CONFIG_IMPORTED_EVENT = 'orbital:midi-config-imported';
+/** Per-message knob preview (paint only; the React commit stays debounced). */
+export const MACRO_LIVE_PREVIEW_EVENT = 'orbital:macro-live-preview';
+const STATUS_INTERVAL_MS = 80;
 const STORAGE = 'orbital-midi-config-v4';
 const LEGACY_STORAGE = 'orbital-midi-config-v3';
 const LEARN_TIMEOUT_MS = 15000;
@@ -78,7 +83,7 @@ function isLegacyFactoryMap(raw: unknown): boolean {
   return entries.length === 8 && entries.every(([k, v]) => /^macro[1-8]$/.test(k) && v === Number(k.slice(5)));
 }
 
-export interface MidiConfigPayload { version: 4; selectedInputId: string; channel: number; softTakeover: boolean; assignments: MidiAssignmentMap }
+export interface MidiConfigPayload { version: 4; selectedInputId: string; channel: number; pickup: boolean; assignments: MidiAssignmentMap }
 
 /** Read the saved MIDI config for settings export. */
 export function exportMidiConfig(): MidiConfigPayload | null {
@@ -93,7 +98,7 @@ export function importMidiConfig(raw: unknown): boolean {
     version: 4,
     selectedInputId: typeof r.selectedInputId === 'string' && r.selectedInputId.length <= 256 ? r.selectedInputId : 'all',
     channel: clampInt(r.channel, 0, 16) ?? 0,
-    softTakeover: r.softTakeover !== false,
+    pickup: r.pickup === true,
     assignments: sanitizeAssignments(r.assignments),
   };
   safeLocalStorage.setItem(STORAGE, JSON.stringify(payload));
@@ -107,7 +112,8 @@ export class MidiController {
   private capability:MidiCapability='checking';
   private selectedInputId='all';
   private channel=0;
-  private softTakeover=true;
+  /** Soft takeover is opt-in: endless encoders (e.g. Komplete Kontrol) have no physical position. */
+  private softTakeover=false;
   private learningMacro:string|null=null;
   private learnCandidates=new Map<string,number>();
   private assignments:MidiAssignmentMap={};
@@ -124,6 +130,7 @@ export class MidiController {
   private error?:string;
   private guidance?:string;
   private macroCommitTimer: ReturnType<typeof setTimeout> | null = null;
+  private statusTimer: ReturnType<typeof setTimeout> | null = null;
   private pendingMacroCommit: { macroId: string; value: number } | null = null;
   constructor(private opts:MidiControllerOptions){ this.load(); }
 
@@ -134,7 +141,7 @@ export class MidiController {
     const onSelect=(e:Event)=>{ const d=(e as CustomEvent).detail||{};
       if(typeof d.inputId==='string')this.selectedInputId=d.inputId;
       if(Number.isFinite(d.channel))this.channel=d.channel;
-      if(typeof d.softTakeover==='boolean'){ this.softTakeover=d.softTakeover; this.pickedUp.clear(); }
+      if(typeof d.softTakeover==='boolean'){ this.softTakeover=d.softTakeover; this.pickedUp.clear(); this.lastIncoming.clear(); }
       this.save(); this.bindInputs(); this.emit(); };
     const onClear=(e:Event)=>{ const id=(e as CustomEvent).detail?.macroId; if(id){ delete this.assignments[id]; this.pickedUp.delete(id); } if(this.learningMacro===id)this.cancelLearn(); this.save(); this.emit(); };
     const onCancel=()=>this.cancelLearn();
@@ -152,6 +159,8 @@ export class MidiController {
     this.cancelLearn(false);
     cancelTrackedTimeout(this.macroCommitTimer);
     this.macroCommitTimer=null;
+    cancelTrackedTimeout(this.statusTimer);
+    this.statusTimer=null;
     this.pendingMacroCommit=null;
     this.unbindInputs();
     this.cleanupFns.splice(0).forEach(fn=>fn());
@@ -258,7 +267,7 @@ export class MidiController {
     const current=Number(this.opts.params[macroId]);
     const written=this.lastWritten.get(macroId);
     // Something other than MIDI moved the macro (preset, UI, randomize): re-arm pickup.
-    if(written===undefined || !Number.isFinite(current) || Math.abs(current-written)>0.5) this.pickedUp.delete(macroId);
+    if(written===undefined || !Number.isFinite(current) || Math.abs(current-written)>1) this.pickedUp.delete(macroId);
     if(this.pickedUp.has(macroId)){ this.lastIncoming.set(macroId,value); return true; }
     const previous=this.lastIncoming.get(macroId);
     this.lastIncoming.set(macroId,value);
@@ -280,13 +289,14 @@ export class MidiController {
     if(this.learningMacro){
       const key=`${inputId}|${channel}|${data1}`;
       const first=this.learnCandidates.get(key);
-      if(first===undefined){ this.learnCandidates.set(key,data2); this.emit(); return; }
-      if(Math.abs(data2-first)<LEARN_MIN_TRAVEL){ this.emit(); return; }
+      if(first===undefined){ this.learnCandidates.set(key,data2); this.emitSoon(); return; }
+      if(Math.abs(data2-first)<LEARN_MIN_TRAVEL){ this.emitSoon(); return; }
       const binding:MidiBinding={cc:data1,channel,inputId:inputId||undefined,inputName:input.name||undefined};
       for(const id of Object.keys(this.assignments)) if(this.bindingMatches(this.assignments[id],data1,channel,inputId)) delete this.assignments[id];
       this.assignments[this.learningMacro]=binding;
       this.pickedUp.add(this.learningMacro); // the user is holding this control right now
       this.save(); this.cancelLearn(false);
+      this.emit(); // assignment changed: publish immediately
     }
 
     const value=(data2/127)*100;
@@ -296,9 +306,10 @@ export class MidiController {
       applyRuntimeParameterTransaction(this.opts.params,{[macroId]:value});
       this.lastWritten.set(macroId,value);
       this.opts.applyMacroLive(macroId,value);
+      window.dispatchEvent(new CustomEvent(MACRO_LIVE_PREVIEW_EVENT,{detail:{macroId,value}}));
       this.scheduleMacroCommit(macroId,value);
     }
-    this.emit();
+    this.emitSoon();
   };
 
   private snapshot():MidiStatus{
@@ -306,9 +317,17 @@ export class MidiController {
     const waitingForPickup=this.softTakeover?Object.keys(this.assignments).filter(id=>this.lastIncoming.has(id)&&!this.pickedUp.has(id)):[];
     return {enabled:this.enabled,capability:this.capability,inputs,selectedInputId:this.selectedInputId,channel:this.channel,learningMacro:this.learningMacro,assignments:{...this.assignments},lastCC:this.lastCC,lastValue:this.lastValue,lastChannel:this.lastChannel,learnExpiresAt:this.learnExpiresAt,softTakeover:this.softTakeover,waitingForPickup,error:this.error,guidance:this.guidance};
   }
-  private emit(){ window.dispatchEvent(new CustomEvent('orbital:midi-status',{detail:this.snapshot()})); }
+  private emit(){
+    cancelTrackedTimeout(this.statusTimer); this.statusTimer=null;
+    window.dispatchEvent(new CustomEvent('orbital:midi-status',{detail:this.snapshot()}));
+  }
+  /** CC streams arrive at 100+ msg/s. The status only feeds the modal readout, so publish at most every STATUS_INTERVAL_MS. */
+  private emitSoon(){
+    if(this.statusTimer!==null) return;
+    this.statusTimer=scheduleTrackedTimeout('midi-status-coalesce',()=>{ this.statusTimer=null; this.emit(); },STATUS_INTERVAL_MS);
+  }
   private save(){
-    const payload:MidiConfigPayload={version:4,selectedInputId:this.selectedInputId,channel:this.channel,softTakeover:this.softTakeover,assignments:this.assignments};
+    const payload:MidiConfigPayload={version:4,selectedInputId:this.selectedInputId,channel:this.channel,pickup:this.softTakeover,assignments:this.assignments};
     safeLocalStorage.setItem(STORAGE,JSON.stringify(payload));
   }
   private load(){
@@ -318,14 +337,14 @@ export class MidiController {
         // One-time v3 migration. An untouched factory map (CC 1–8) becomes unassigned.
         const legacy=JSON.parse(safeLocalStorage.getItem(LEGACY_STORAGE)||'null');
         if(legacy){
-          s={version:4,selectedInputId:legacy.selectedInputId,channel:legacy.channel,softTakeover:true,
+          s={version:4,selectedInputId:legacy.selectedInputId,channel:legacy.channel,pickup:false,
             assignments:isLegacyFactoryMap(legacy.assignments)?{}:legacy.assignments};
         }
       }
       if(!s) return;
       if(typeof s.selectedInputId==='string') this.selectedInputId=s.selectedInputId;
       if(Number.isFinite(s.channel)) this.channel=s.channel;
-      this.softTakeover=s.softTakeover!==false;
+      this.softTakeover=s.pickup===true;
       this.assignments=sanitizeAssignments(s.assignments);
       this.save();
     }catch{}
