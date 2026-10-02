@@ -83,6 +83,7 @@ export const WINDOW_BRIDGE_MANIFEST: readonly WindowBridgeManifestEntry[] = Obje
   // Object references that are strictly main-thread owned.
   bridge('centerGraphicController', 'controller-reference', 'replace-before-worker-cutover', 'visualizer runtime', 'runtime-session', 'DOM/media controller; worker receives media commands and transferable frames only.'),
   bridge('coreTexturesEngine', 'controller-reference', 'replace-before-worker-cutover', 'visualizer runtime', 'runtime-session', 'Main-thread compatibility reference during renderer migration.'),
+  bridge('orbitalInput', 'controller-reference', 'keep-main-thread-only', 'createSessionInteractionSetup (Sprint O4 InputRouter)', 'runtime-session', 'Shared controller input router (MIDI, gamepad). Input devices are main-thread APIs; the worker never sees controllers, only resulting parameter patches.'),
 
   // Development/diagnostic publication. Never a worker dependency.
   bridge('__ORBITAL_AUDIO_GRAPH__', 'diagnostics', 'debug-only', 'AudioSystemInit', 'debug-session', 'Audio graph identity snapshot used to detect accidental rebuilds.'),

@@ -1,5 +1,6 @@
 import { announceSectionOpened, useAccordionMember } from './panelAccordion';
-import { memo, useCallback, type Dispatch, type SetStateAction } from 'react';
+import { MACRO_SET_CHANGED_EVENT, MACRO_SET_TOGGLE_REQUEST_EVENT } from '../input/types';
+import { memo, useCallback, useEffect, useRef, type Dispatch, type SetStateAction } from 'react';
 import type { PlaylistTrack } from '../types/playlist';
 import { ChevronDown, Settings, SkipBack, SkipForward } from 'lucide-react';
 import { AstralShaperSettings } from './AstralShaperSettings';
@@ -137,6 +138,19 @@ export const ControlPanel = memo(function ControlPanel(props: ControlPanelProps)
     if (colorSectionCollapsed) announceSectionOpened('color');
   }, [colorSectionCollapsed, setColorSectionCollapsed]);
   useAccordionMember('color', !colorSectionCollapsed, () => setColorSectionCollapsed(true));
+
+  // Sprint O4: controllers drive "the knobs you can see". Announce the visible macro set and
+  // honour swap requests (gamepad View button, MIDI-learned action).
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent(MACRO_SET_CHANGED_EVENT, { detail: { macroSet } }));
+  }, [macroSet]);
+  const macroSetRef = useRef(macroSet);
+  macroSetRef.current = macroSet;
+  useEffect(() => {
+    const onToggle = () => setMacroSet(macroSetRef.current === 'classic' ? 'advanced' : 'classic');
+    window.addEventListener(MACRO_SET_TOGGLE_REQUEST_EVENT, onToggle);
+    return () => window.removeEventListener(MACRO_SET_TOGGLE_REQUEST_EVENT, onToggle);
+  }, [setMacroSet]);
   const toggleAnimationSection = useCallback(() => {
     setAnimationSectionCollapsed(!animationSectionCollapsed);
     if (animationSectionCollapsed) announceSectionOpened('motion');

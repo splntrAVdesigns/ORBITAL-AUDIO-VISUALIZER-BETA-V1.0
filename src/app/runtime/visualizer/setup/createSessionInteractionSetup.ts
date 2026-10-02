@@ -5,6 +5,8 @@ import type { RuntimeEventRegistry } from '../session/RuntimeEventRegistry';
 import type { RuntimeResourceScope } from '../session/RuntimeResourceDiagnostics';
 import type { RuntimeSessionDisposer } from '../session/RuntimeSessionDisposer';
 import { applyRuntimeParameterTransaction } from '../../parameters/RuntimeParameterTransactions';
+import { InputRouter } from '../../../input/InputRouter';
+import { MacroMotor } from '../../../input/MacroMotor';
 import { getActiveCycleShapes, syncLiquidShapeSelect, type ShapeType } from '../../../utils/astralShaper';
 
 export interface SessionInteractionSetupOptions {
@@ -219,7 +221,8 @@ export function createSessionInteractionSetup(options: SessionInteractionSetupOp
   sessionDisposer.add(() => recordingEngine.dispose());
   sessionDisposer.add(installRecordingRuntimeController(recordingControllerRef, recordingEngine));
 
-  const midiController = new MidiController({
+  // Sprint O4: one macro motor + input router shared by every controller source.
+  const inputRouter = new InputRouter(new MacroMotor({
     params,
     applyMacroLive: (macroId: string, value: number) => {
       applyRuntimeParameterTransaction(params, { [macroId]: value });
@@ -232,6 +235,15 @@ export function createSessionInteractionSetup(options: SessionInteractionSetupOp
       if (hiddenInput) hiddenInput.value = String(value);
       (window as any).applyMacro?.(macroId, value, { immediateDom: true, interactionPhase: 'commit' });
     },
+  }));
+  inputRouter.init();
+  sessionDisposer.add(() => inputRouter.dispose());
+  (window as any).orbitalInput = inputRouter;
+  sessionDisposer.add(() => { if ((window as any).orbitalInput === inputRouter) delete (window as any).orbitalInput; });
+
+  const midiController = new MidiController({
+    params,
+    router: inputRouter,
     getSelectedPaletteIndex,
     setSelectedPaletteIndex,
     palettesLength,

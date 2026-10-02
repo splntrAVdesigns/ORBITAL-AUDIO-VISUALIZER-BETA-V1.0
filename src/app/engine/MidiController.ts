@@ -1,6 +1,8 @@
 import { cancelTrackedTimeout, scheduleTrackedTimeout } from '../runtime/mainThread/MainThreadAsyncDiagnostics';
 import { safeLocalStorage } from '../utils/browserCompat';
-import { applyRuntimeParameterTransaction } from '../runtime/parameters/RuntimeParameterTransactions';
+import { InputRouter } from '../input/InputRouter';
+import { MacroMotor } from '../input/MacroMotor';
+import { MACRO_LIVE_PREVIEW_EVENT, type MacroId } from '../input/types';
 
 /**
  * ORBITAL — MIDI controller (Sprint O3).
@@ -32,16 +34,19 @@ export type MidiStatus = {
 };
 export interface MidiControllerOptions {
   params: Record<string, any>;
-  applyMacroLive: (macroId: string, value: number) => void;
-  commitMacroValue: (macroId: string, value: number) => void;
+  /** Only used when no shared router is supplied. */
+  applyMacroLive?: (macroId: string, value: number) => void;
+  commitMacroValue?: (macroId: string, value: number) => void;
   getSelectedPaletteIndex: () => number;
   setSelectedPaletteIndex: (v: number) => void;
   palettesLength: number;
+  /** Shared router (Sprint O4). When omitted the controller builds a private one. */
+  router?: InputRouter;
 }
 
 export const MIDI_CONFIG_IMPORTED_EVENT = 'orbital:midi-config-imported';
-/** Per-message knob preview (paint only; the React commit stays debounced). */
-export const MACRO_LIVE_PREVIEW_EVENT = 'orbital:macro-live-preview';
+/** Re-exported for existing imports; owned by input/types since Sprint O4. */
+export { MACRO_LIVE_PREVIEW_EVENT };
 const STATUS_INTERVAL_MS = 80;
 const STORAGE = 'orbital-midi-config-v4';
 const LEGACY_STORAGE = 'orbital-midi-config-v3';
@@ -129,10 +134,14 @@ export class MidiController {
   private pickedUp=new Set<string>();
   private error?:string;
   private guidance?:string;
-  private macroCommitTimer: ReturnType<typeof setTimeout> | null = null;
   private statusTimer: ReturnType<typeof setTimeout> | null = null;
-  private pendingMacroCommit: { macroId: string; value: number } | null = null;
-  constructor(private opts:MidiControllerOptions){ this.load(); }
+  private readonly router: InputRouter;
+  private readonly ownsRouter: boolean;
+  constructor(private opts:MidiControllerOptions){
+    this.ownsRouter=!opts.router;
+    this.router=opts.router ?? new InputRouter(new MacroMotor({params:opts.params,applyMacroLive:opts.applyMacroLive??(()=>{}),commitMacroValue:opts.commitMacroValue??(()=>{})}));
+    this.load();
+  }
 
   init():void {
     this.detectCapability();
@@ -152,29 +161,17 @@ export class MidiController {
       ['orbital:midi-cancel-learn',onCancel as EventListener],[MIDI_CONFIG_IMPORTED_EVENT,onImported as EventListener],
     ];
     for(const [name,fn] of pairs){ window.addEventListener(name,fn); this.cleanupFns.push(()=>window.removeEventListener(name,fn)); }
+    this.cleanupFns.push(InputRouter.onOtherSourceLearn('midi',()=>{ if(this.learningMacro) this.cancelLearn(); }));
     this.emit();
   }
   dispose():void {
     this.enabled=false;
     this.cancelLearn(false);
-    cancelTrackedTimeout(this.macroCommitTimer);
-    this.macroCommitTimer=null;
     cancelTrackedTimeout(this.statusTimer);
     this.statusTimer=null;
-    this.pendingMacroCommit=null;
     this.unbindInputs();
     this.cleanupFns.splice(0).forEach(fn=>fn());
-  }
-
-  private scheduleMacroCommit(macroId:string,value:number):void {
-    this.pendingMacroCommit={macroId,value};
-    cancelTrackedTimeout(this.macroCommitTimer);
-    this.macroCommitTimer=scheduleTrackedTimeout('midi-macro-commit',()=>{
-      this.macroCommitTimer=null;
-      const pending=this.pendingMacroCommit;
-      this.pendingMacroCommit=null;
-      if(pending)this.opts.commitMacroValue(pending.macroId,pending.value);
-    },120);
+    if(this.ownsRouter) this.router.dispose();
   }
 
   private detectCapability(){
@@ -240,6 +237,7 @@ export class MidiController {
     this.learningMacro=macroId;
     this.learnCandidates.clear();
     this.learnExpiresAt=Date.now()+LEARN_TIMEOUT_MS;
+    InputRouter.announceLearnBegin('midi');
     this.learnTimer=window.setTimeout(()=>this.cancelLearn(),LEARN_TIMEOUT_MS);
     this.emit();
   }
@@ -303,11 +301,9 @@ export class MidiController {
     for(const macroId of Object.keys(this.assignments)){
       if(!this.bindingMatches(this.assignments[macroId],data1,channel,inputId)) continue;
       if(!this.passesPickup(macroId,value)) continue;
-      applyRuntimeParameterTransaction(this.opts.params,{[macroId]:value});
-      this.lastWritten.set(macroId,value);
-      this.opts.applyMacroLive(macroId,value);
-      window.dispatchEvent(new CustomEvent(MACRO_LIVE_PREVIEW_EVENT,{detail:{macroId,value}}));
-      this.scheduleMacroCommit(macroId,value);
+      // Sprint O4: one write path for every controller (live apply, gutter preview, debounced commit).
+      this.router.absolute({kind:'macro',macroId:macroId as MacroId},value);
+      this.lastWritten.set(macroId,Number(this.opts.params[macroId]));
     }
     this.emitSoon();
   };

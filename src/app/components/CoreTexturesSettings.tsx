@@ -6,6 +6,7 @@ import { afterDomSectionToggle, useDomAccordionMember } from './panelAccordion';
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { ChevronDown, Star } from 'lucide-react';
 import { SHADER_REGISTRY } from '../src/shaders/ShaderRegistry';
+import { CORE_TEXTURES_STEP_REQUEST_EVENT } from '../input/types';
 import { CORE_LAYER_EXCLUSIVITY_EVENT, installCoreLayerExclusivity } from '../runtime/parameters/coreLayerExclusivity';
 
 interface ShaderCard {
@@ -163,6 +164,28 @@ function CoreTexturesSettingsComponent({ onReset }: CoreTexturesSettingsProps) {
     }
     bump();
   }, []);
+
+  // Sprint O4: controller shader stepping (gamepad D-pad, MIDI-learned action). If Core
+  // Textures is off, the first press turns it on (core-layer exclusivity switches the other
+  // layers off); later presses step through the full registry via handleSelect, so each
+  // shader's own control defaults are applied exactly as a click would.
+  useEffect(() => {
+    const onStep = (event: Event) => {
+      const direction = (event as CustomEvent<{ direction?: number }>).detail?.direction === -1 ? -1 : 1;
+      const params = getParams();
+      if (!params.coreTexturesEnabled) {
+        (document.getElementById('coreTexturesEnabled') as HTMLInputElement | null)?.click();
+        return;
+      }
+      const list = SHADER_REGISTRY;
+      if (!list.length) return;
+      const currentId = getEngine()?.getCurrentShaderId?.() || params.coreTexturesShaderId || list[0].id;
+      const index = Math.max(0, list.findIndex((shader: any) => shader.id === currentId));
+      handleSelect(list[(index + direction + list.length) % list.length].id);
+    };
+    window.addEventListener(CORE_TEXTURES_STEP_REQUEST_EVENT, onStep);
+    return () => window.removeEventListener(CORE_TEXTURES_STEP_REQUEST_EVENT, onStep);
+  }, [handleSelect]);
 
   const handleFavorite = useCallback((e: React.MouseEvent, id: string) => {
     e.stopPropagation();

@@ -68,8 +68,8 @@ const ASYNC_OWNERSHIP = {
   // readiness is driven by real stages (see src/app/boot/bootReadiness.ts) and
   // ordered session boot steps (SessionBootSequence), not a fixed setTimeout.
   'src/app/hooks/usePresetKeyboardNavigation.ts': {
-    counts: { setTimeout: 1, setInterval: 0, requestAnimationFrame: 0 },
-    classification: 'owned latest-preset commit debounce with hook cleanup; toast timer removed',
+    counts: { setTimeout: 0, setInterval: 0, requestAnimationFrame: 0 },
+    classification: 'Sprint O4: commit debounce moved to input/actions (tracked helper); hook cancels it on cleanup',
   },
   'src/app/runtime/FrameScheduler.ts': {
     counts: { setTimeout: 0, setInterval: 0, requestAnimationFrame: 1 },
