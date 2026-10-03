@@ -1,9 +1,5 @@
-import {
-  cancelTrackedInterval,
-  cancelTrackedTimeout,
-  scheduleTrackedInterval,
-  scheduleTrackedTimeout,
-} from '../runtime/mainThread/MainThreadAsyncDiagnostics';
+import { cancelTrackedTimeout, scheduleTrackedTimeout } from '../runtime/mainThread/MainThreadAsyncDiagnostics';
+import { createFrameDriver } from './frameDriver';
 import { applyRuntimeParameterTransaction } from '../runtime/parameters/RuntimeParameterTransactions';
 import { MACRO_LIVE_PREVIEW_EVENT } from './types';
 
@@ -18,7 +14,7 @@ import { MACRO_LIVE_PREVIEW_EVENT } from './types';
  *
  *  2. step() / setRate() / reset(): relative intent (gamepad). These move a TARGET; a
  *     critically-damped one-pole follower glides the real value toward it, so taps, holds
- *     and resets never jump. Frame-rate independent (uses real elapsed time).
+ *     and resets never jump. Advances once per rendered frame; frame-rate independent.
  *
  * Commit policy for glides: throttled every GLIDE_COMMIT_INTERVAL_MS while moving, plus a
  * final commit when the value settles. The throttle matters for Motion (macro2), which by
@@ -34,8 +30,8 @@ export interface MacroMotorOptions {
   commitMacroValue: (macroId: string, value: number) => void;
 }
 
-const TICK_MS = 16;
-const MAX_TICK_DT_MS = 50;
+/** Long enough that low frame rates don't slow glides; the follower absorbs the bigger step. */
+const MAX_TICK_DT_MS = 250;
 /** Glide time constant. ~95% settled after 3τ ≈ 210 ms. */
 export const GLIDE_TAU_MS = 70;
 /** Reset glide: ~95% settled after ≈ 250 ms. */
@@ -62,7 +58,8 @@ const clamp = (v: number) => Math.max(0, Math.min(100, v));
 
 export class MacroMotor {
   private glides = new Map<string, Glide>();
-  private interval: ReturnType<typeof setInterval> | null = null;
+  /** Glides advance on the visual frame clock (Sprint O5), only while something is gliding. */
+  private readonly driver = createFrameDriver('input-macro-motor', (now) => this.tick(now));
   private lastTickAt = 0;
   private commitTimers = new Map<string, ReturnType<typeof setTimeout>>();
   private pendingCommits = new Map<string, number>();
@@ -127,8 +124,7 @@ export class MacroMotor {
 
   dispose(): void {
     this.disposed = true;
-    cancelTrackedInterval(this.interval);
-    this.interval = null;
+    this.driver.stop();
     for (const t of this.commitTimers.values()) cancelTrackedTimeout(t);
     this.commitTimers.clear();
     this.pendingCommits.clear();
@@ -152,15 +148,14 @@ export class MacroMotor {
   }
 
   private ensureRunning(): void {
-    if (this.disposed || this.interval !== null) return;
+    if (this.disposed || this.driver.running) return;
     this.lastTickAt = performance.now();
-    this.interval = scheduleTrackedInterval('input-macro-motor', () => this.tick(performance.now()), TICK_MS);
+    this.driver.start();
   }
 
   private stopIfIdle(): void {
-    if (this.glides.size || this.interval === null) return;
-    cancelTrackedInterval(this.interval);
-    this.interval = null;
+    if (this.glides.size || !this.driver.running) return;
+    this.driver.stop();
   }
 
   private tick(now: number): void {

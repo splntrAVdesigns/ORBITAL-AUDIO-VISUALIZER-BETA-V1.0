@@ -1488,3 +1488,31 @@ body.orbital-stage-transition #stage {
 .macro-knob-svg-container {
   contain: layout paint style;
 }
+/* ── Sprint O5: Controllers modal tabs, gamepad panel, focus ring ─────────────── */
+.orbital-controller-tabs{display:flex;gap:4px;padding:8px 18px 0;background:#2b3238;border-bottom:1px solid rgba(30,144,255,.36)}
+.orbital-controller-tabs button{display:flex;align-items:center;gap:7px;background:transparent;border:1px solid transparent;border-bottom:0;color:#8aa0ae;font-size:10px;font-weight:700;letter-spacing:.12em;padding:8px 14px;border-radius:4px 4px 0 0;cursor:pointer}
+.orbital-controller-tabs button.active{color:var(--neonBlue);background:#262d33;border-color:rgba(30,144,255,.36);margin-bottom:-1px}
+.orbital-controller-tabs .dot{width:6px;height:6px;border-radius:50%;background:#4b5b66}
+.orbital-controller-tabs .dot.on{background:#39e6a0;box-shadow:0 0 6px rgba(57,230,160,.7)}
+.pad-live{display:grid;grid-template-columns:minmax(220px,1.4fr) 1fr;gap:14px;align-items:center;margin:4px 0 6px}
+.pad-diagram{width:100%;height:auto;display:block}
+.pad-diagram rect,.pad-diagram circle{transition:fill 60ms linear}
+.pad-diagram-label{font:700 7px system-ui;fill:#9fb4c2;letter-spacing:.06em;pointer-events:none}
+.pad-live-meta b{display:block;color:#e2ebf0;font-size:11px;word-break:break-word}
+.pad-live-meta small{display:block;color:#82949f;font-size:9px;margin-top:3px}
+.pad-extra{margin-top:10px}
+.pad-extra div{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}
+.pad-extra span{font-size:9px;padding:3px 6px;border:1px solid rgba(4,217,255,.3);border-radius:3px;color:#9fb4c2}
+.pad-extra span.on{background:var(--neonBlue);color:#06131b}
+.pad-feel{grid-template-columns:repeat(3,1fr)}
+.pad-feel input[type=range]{width:100%;accent-color:var(--neonBlue)}
+.orbital-midi-row.pad-row{grid-template-columns:minmax(150px,1fr) 150px 78px 70px}
+.orbital-midi-row.pad-row code{display:flex;flex-direction:column;align-items:center;gap:3px}
+.pad-invert{display:flex;align-items:center;gap:4px;font:600 8px system-ui;color:#82949f;text-transform:uppercase;letter-spacing:.06em;cursor:pointer}
+.pad-invert input{margin:0;accent-color:var(--neonBlue)}
+.pad-indicator{font-size:8px;font-weight:700;letter-spacing:.08em;background:transparent;border:1px solid rgba(122,148,170,.35);color:#7a94aa;border-radius:3px;padding:2px 5px;margin-right:6px;cursor:pointer}
+.pad-indicator.on{color:#39e6a0;border-color:rgba(57,230,160,.6);box-shadow:0 0 6px rgba(57,230,160,.25)}
+/* Focus ring: only while a controller is in use (body.controller-active, 2.5 s idle fade). */
+.macro-knob .macro-knob-circle{transition:outline-color .25s ease}
+body.controller-active .macro-knob.controller-focus .macro-knob-circle{outline:2px solid rgba(4,217,255,.85);outline-offset:5px;border-radius:50%}
+@media(max-width:620px){.pad-live{grid-template-columns:1fr}.pad-feel{grid-template-columns:1fr}.orbital-midi-row.pad-row{grid-template-columns:1fr 120px 72px}}

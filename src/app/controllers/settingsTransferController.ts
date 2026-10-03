@@ -10,6 +10,7 @@ import {
 import { syncLiquidShapeSelect, type ShapeType } from '../utils/astralShaper';
 import { notify } from '../utils/notify';
 import { exportMidiConfig, importMidiConfig } from '../engine/MidiController';
+import { exportGamepadConfig, importGamepadConfig } from '../input/gamepadConfig';
 
 const PARAM_IDS = ['gain','smoothing','motionIntensity','motionSmoothing','bassBoost','rotationSpeed','effectAmount','darkStrobeDepth','darkStrobeDisplacement','motionBlurAmount','iridizeAmount','colorWaveAmount','saturationBurstAmount'] as const;
 const SELECT_IDS = ['beatPulseType', 'astralShape'] as const;
@@ -55,7 +56,7 @@ export function exportOrbitalSettings() {
     ...Object.fromEntries(SELECT_IDS.map((id) => [id, readSelect(id)])),
     ...Object.fromEntries(CHECKBOX_IDS.map((id) => [id, readCheckbox(id)])),
   };
-  const payload = { version:'1.0.0', spreadScale: CORE_PARTICLE_SPREAD_SCALE_VERSION, name:'ORBITAL Settings', timestamp:new Date().toISOString(), params, customPresets, midi: exportMidiConfig() };
+  const payload = { version:'1.0.0', spreadScale: CORE_PARTICLE_SPREAD_SCALE_VERSION, name:'ORBITAL Settings', timestamp:new Date().toISOString(), params, customPresets, midi: exportMidiConfig(), gamepad: exportGamepadConfig() };
   const url = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type:'application/json' }));
   const anchor = document.createElement('a');
   anchor.href = url;
@@ -120,6 +121,8 @@ export function importOrbitalSettings(file: File) {
       // Sprint O3: MIDI mappings travel with settings.
       const importedMidi = (record as { midi?: unknown }).midi;
       if (importedMidi && typeof importedMidi === 'object') importMidiConfig(importedMidi);
+      const importedGamepad = (record as { gamepad?: unknown }).gamepad;
+      if (importedGamepad && typeof importedGamepad === 'object') importGamepadConfig(importedGamepad);
 
       if (record.customPresets !== undefined) {
         const presetValidation = validateCustomPresetResource(record.customPresets);

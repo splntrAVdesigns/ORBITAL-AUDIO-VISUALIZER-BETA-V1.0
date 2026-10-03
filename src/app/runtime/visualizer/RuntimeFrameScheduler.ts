@@ -1,6 +1,7 @@
 import type { RuntimeFrameTiming } from './VisualizerRuntimeTypes';
 import type { RuntimeResourceScope } from './session/RuntimeResourceDiagnostics';
 import type { FrameSchedulerContract } from './FrameSchedulerContract';
+import { runFrameInputTaps } from './frameInputTaps';
 
 export interface RuntimeFrameSchedulerOptions {
   onFrame: (timing: RuntimeFrameTiming) => void;
@@ -114,6 +115,10 @@ export class RuntimeFrameScheduler implements FrameSchedulerContract {
       resumed: this.resumed,
     };
     this.resumed = false;
+
+    // Sprint O5: controller input samples on the frame clock, before the frame renders.
+    // Taps are individually guarded and can never enter crash recovery.
+    runFrameInputTaps(now);
 
     try {
       this.options.onFrame(timing);

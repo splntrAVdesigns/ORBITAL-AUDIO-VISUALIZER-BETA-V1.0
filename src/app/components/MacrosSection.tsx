@@ -3,6 +3,7 @@
 
 import { memo, useEffect, useState } from 'react';
 import type { MidiStatus } from '../engine/MidiController';
+import { GAMEPAD_STATUS_EVENT, type GamepadStatus } from '../input/GamepadSource';
 import { MacroKnob } from './MacroKnob';
 
 interface MacrosSectionProps {
@@ -34,6 +35,13 @@ function MacrosSection({
     const handler = (e: Event) => setMidiStatus((e as CustomEvent).detail);
     window.addEventListener('orbital:midi-status', handler as EventListener);
     return () => window.removeEventListener('orbital:midi-status', handler as EventListener);
+  }, []);
+  // Sprint O5: gamepad indicator (lit while a controller is connected and polled).
+  const [padLive, setPadLive] = useState(false);
+  useEffect(() => {
+    const handler = (e: Event) => setPadLive(Boolean((e as CustomEvent<GamepadStatus>).detail?.pad));
+    window.addEventListener(GAMEPAD_STATUS_EVENT, handler as EventListener);
+    return () => window.removeEventListener(GAMEPAD_STATUS_EVENT, handler as EventListener);
   }, []);
   const toggleMidi = (enabled: boolean) => {
     window.dispatchEvent(new CustomEvent('orbital:midi-toggle', { detail: { enabled } }));
@@ -112,8 +120,15 @@ function MacrosSection({
             </button>
           </div>
           
-          {/* Right: MIDI Toggle */}
+          {/* Right: Gamepad indicator + MIDI Toggle */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <button
+              type="button"
+              className={`pad-indicator ${padLive ? 'on' : ''}`}
+              aria-label={padLive ? 'Gamepad connected — open gamepad settings' : 'Open gamepad settings'}
+              title={padLive ? 'Gamepad connected' : 'Gamepad: connect a controller and press any button'}
+              onClick={() => window.dispatchEvent(new CustomEvent('orbital:midi-open', { detail: { tab: 'gamepad' } }))}
+            >PAD</button>
             <span style={{ fontSize: '8px', color: '#7a94aa' }}>MIDI</span>
             <label className="switch" style={{ transform: 'scale(0.8)' }}><input id="enableMIDI" type="checkbox" checked={!!midiStatus?.enabled} onChange={(e) => toggleMidi(e.target.checked)} /><span className="thumb"></span></label><button type="button" aria-label="Open MIDI settings" onClick={() => window.dispatchEvent(new Event('orbital:midi-open'))} style={{fontSize:'8px',background:'transparent',border:0,color:'var(--neonBlue)',cursor:'pointer',padding:0}}>SET</button>
           </div>

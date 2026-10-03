@@ -7,6 +7,7 @@ import type { RuntimeSessionDisposer } from '../session/RuntimeSessionDisposer';
 import { applyRuntimeParameterTransaction } from '../../parameters/RuntimeParameterTransactions';
 import { InputRouter } from '../../../input/InputRouter';
 import { MacroMotor } from '../../../input/MacroMotor';
+import { GamepadSource } from '../../../input/GamepadSource';
 import { getActiveCycleShapes, syncLiquidShapeSelect, type ShapeType } from '../../../utils/astralShaper';
 
 export interface SessionInteractionSetupOptions {
@@ -250,6 +251,11 @@ export function createSessionInteractionSetup(options: SessionInteractionSetupOp
   });
   midiController.init();
   sessionDisposer.add(() => midiController.dispose());
+
+  // Sprint O5: gamepad feeds the same router (and macro motor) as MIDI.
+  const gamepadSource = new GamepadSource(inputRouter);
+  gamepadSource.init();
+  sessionDisposer.add(() => gamepadSource.dispose());
 
   const uiInteractionRuntime = new UIInteractionRuntime(resourceScope);
   uiInteractionRuntime.init();
